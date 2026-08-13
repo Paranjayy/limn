@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Safari Links → Clean Lists · Limn</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07090f;
+      --panel: #10141f;
+      --panel-2: #0c1018;
+      --text: #e7ecf6;
+      --muted: #93a0ba;
+      --line: rgba(148, 163, 199, 0.10);
+      --accent: #6d5ef0;
+      --good: #3ee0c8;
+      --danger: #ff6b6b;
+      --shadow: 0 18px 45px rgba(0,0,0,.28);
+    }
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --bg: #f4f6f8;
+      --panel: #ffffff;
+      --panel-2: #f7f9fb;
+      --text: #17191d;
+      --muted: #66717d;
+      --line: #dbe1e7;
+      --accent: #2367d1;
+      --good: #177a45;
+      --danger: #b42318;
+      --shadow: 0 18px 45px rgba(30,50,70,.10);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(109,94,240,.10), transparent 28rem),
+        var(--bg);
+      color: var(--text);
+    }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 28px 18px 48px; }
+    header {
+      display: flex; justify-content: space-between; gap: 16px; align-items: start;
+      margin-bottom: 20px;
+    }
+    h1 { font-size: clamp(1.55rem, 3vw, 2.35rem); margin: 0 0 6px; letter-spacing: -.035em; }
+    .sub { margin: 0; color: var(--muted); line-height: 1.55; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .card {
+      background: color-mix(in srgb, var(--panel) 94%, transparent);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card-head {
+      padding: 14px 16px; border-bottom: 1px solid var(--line);
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      background: var(--panel-2);
+    }
+    .card-head strong { font-size: .95rem; }
+    .stats { color: var(--muted); font-size: .82rem; white-space: nowrap; }
+    textarea {
+      width: 100%; min-height: 480px; resize: vertical; border: 0; outline: none;
+      background: transparent; color: var(--text); padding: 18px;
+      font: 14px/1.55 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    textarea::placeholder { color: var(--muted); }
+    .controls {
+      margin-top: 18px; padding: 16px; background: var(--panel); border: 1px solid var(--line);
+      border-radius: 18px; display: grid; gap: 14px; box-shadow: var(--shadow);
+    }
+    .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    select, input[type="text"], button {
+      font: inherit;
+    }
+    select, input[type="text"] {
+      background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+      border-radius: 10px; padding: 10px 12px;
+    }
+    input[type="text"] { width: 110px; }
+    label { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); font-size: .92rem; }
+    button {
+      border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+      padding: 10px 13px; border-radius: 10px; cursor: pointer;
+    }
+    button:hover { border-color: var(--accent); }
+    button.primary { background: var(--accent); color: #ffffff; border-color: transparent; font-weight: 700; }
+    button.danger:hover { border-color: var(--danger); color: var(--danger); }
+    button:disabled { opacity: .55; cursor: wait; }
+    .message { min-height: 1.3em; color: var(--good); font-size: .88rem; }
+    .privacy-note { color: var(--muted); font-size: .82rem; }
+    
+    /* history styles */
+    .history-card { margin-top: 18px; }
+    .history-list {
+      display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto;
+      padding: 14px 16px;
+    }
+    .history-item {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      padding: 8px 12px; background: var(--panel-2); border: 1px solid var(--line);
+      border-radius: 8px; cursor: pointer; transition: border-color .15s, background .15s;
+    }
+    .history-item:hover { border-color: var(--accent); background: var(--panel); }
+    .history-item .title-text {
+      font-size: .85rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap; flex: 1; color: var(--text);
+    }
+    .history-item .meta {
+      display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+    }
+    .history-item .count {
+      background: var(--line); padding: 2px 6px; border-radius: 4px;
+      font-size: .75rem; color: var(--muted); font-family: ui-monospace, monospace;
+    }
+    .history-item .time { font-size: .75rem; color: var(--muted); }
+    .history-empty { padding: 14px 16px; text-align: center; color: var(--muted); font-size: .85rem; }
+
+    .help {
+      margin-top: 18px; color: var(--muted); font-size: .91rem; line-height: 1.55;
+      padding: 0 4px;
+    }
+    code { color: var(--text); }
+    @media (max-width: 850px) {
+      .grid { grid-template-columns: 1fr; }
+      textarea { min-height: 320px; }
+      header { align-items: center; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <div>
+        <h1><a href="/" style="text-decoration:none; color:inherit;">Limn</a> / Safari Links → Clean Lists</h1>
+        <p class="sub">Paste Safari’s copied title-and-URL text. The converter pairs each title with the URL below it.</p>
+      </div>
+      <div class="row">
+        <button id="themeBtn" aria-label="Toggle theme">Light mode</button>
+      </div>
+    </header>
+
+    <section class="grid">
+      <article class="card">
+        <div class="card-head">
+          <strong>Safari text</strong>
+          <span class="stats" id="inputStats">0 lines</span>
+        </div>
+        <textarea id="input" spellcheck="false" placeholder="Private
+
+Page title
+https://example.com/
+
+Another page
+https://example.org/"></textarea>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <strong>Converted output</strong>
+          <span class="stats" id="outputStats">0 links</span>
+        </div>
+        <textarea id="output" spellcheck="false" readonly placeholder="Your converted list appears here."></textarea>
+      </article>
+    </section>
+
+    <section class="controls">
+      <div class="row">
+        <select id="format" aria-label="Output format">
+          <option value="rich-bullets">Rich linked bullets (Telegram/Notes)</option>
+          <option value="rich-numbers">Rich linked numbering (Telegram/Notes)</option>
+          <option value="md-bullets">Markdown bullets</option>
+          <option value="md-numbers">Markdown numbering</option>
+          <option value="plain-bullets">Plain bullets</option>
+          <option value="plain-numbers">Plain numbering</option>
+          <option value="html-ul">HTML unordered list</option>
+          <option value="html-ol">HTML ordered list</option>
+          <option value="json">JSON</option>
+          <option value="csv">CSV</option>
+          <option value="inline">Inline list</option>
+        </select>
+
+        <label><input type="checkbox" id="dedupe" checked /> Remove duplicates</label>
+        <label><input type="checkbox" id="sort" /> Sort A–Z</label>
+        <label><input type="checkbox" id="stripTracking" checked /> Smart-clean URLs</label>
+        <label><input type="checkbox" id="ignoreSearches" /> Ignore Google searches</label>
+        <label title="Only used when direct browser fetching is blocked by CORS"><input type="checkbox" id="remoteTitles" /> Remote fallback for titles</label>
+      </div>
+
+      <div class="row">
+        <label>Bullet <input type="text" id="bullet" value="-" maxlength="3" /></label>
+        <label>Delimiter <input type="text" id="delimiter" value=" · " maxlength="20" /></label>
+        <button class="primary" id="convertBtn">Convert</button>
+        <button id="copyBtn">Copy plain text</button>
+        <button id="copyRichBtn">Copy rich links for Telegram</button>
+        <button id="fetchTitlesBtn">Fetch missing titles</button>
+        <button id="downloadBtn">Download</button>
+        <button id="exampleBtn">Load example</button>
+        <button class="danger" id="clearBtn">Clear</button>
+      </div>
+      <div class="message" id="message"></div>
+      <div class="privacy-note">Remote title fallback is opt-in. When enabled, unresolved URLs are sent to Microlink’s metadata endpoint; otherwise processing remains local.</div>
+    </section>
+
+    <!-- History Panel -->
+    <article class="card history-card">
+      <div class="card-head">
+        <strong>Conversion History</strong>
+        <button id="clearHistoryBtn" class="danger" style="padding: 4px 8px; font-size: 11px;">Clear history</button>
+      </div>
+      <div id="historyList" class="history-list">
+        <div class="history-empty">No conversion history yet. Converted lists will appear here.</div>
+      </div>
+    </article>
+
+    <p class="help">
+      It ignores standalone lines such as <code>Private</code> and understands Safari’s alternating title/URL export,
+      Markdown links, bare URLs, and single-line entries such as <code>- Title (https://example.com)</code>.
+      “Copy rich links for Telegram” copies a real DOM selection rather than a plain-text fallback, allowing Telegram, Apple Notes, Mail, and Pages to preserve clickable titles without exposing the full URL. Choose Rich linked bullets or Rich linked numbering first.
+      Press <code>⌘/Ctrl + Enter</code> to convert. Smart cleaning removes only recognized tracking parameters while preserving functional query values, paths, fragments, playlist context, search queries, and product identifiers.
+    </p>
+  </main>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const input = $("input");
+    const output = $("output");
+    const format = $("format");
+    const dedupe = $("dedupe");
+    const sort = $("sort");
+    const stripTracking = $("stripTracking");
+    const ignoreSearches = $("ignoreSearches");
+    const remoteTitles = $("remoteTitles");
+    const bullet = $("bullet");
+    const delimiter = $("delimiter");
+    const message = $("message");
+    let currentItems = [];
+
+    const universalTrackingKeys = new Set([
+      "gclid","dclid","fbclid","msclkid","mc_cid","mc_eid","igshid","yclid",
+      "wickedid","vero_conv","vero_id","oly_anon_id","oly_enc_id","rb_clickid",
+      "s_cid","soc_src","soc_trk","spm","scid","mkt_tok","trk","trkcampaign"
+    ]);
+
+    const hostTrackingRules = [
+      { host: /(^|\.)google\./i, keys: new Set(["client","rls","ie","oe","sei","ved","sourceid","uact","sxsrf","gs_lcrp","oq","aqs","sca_esv"]) },
+      { host: /(^|\.)youtube\.com$/i, keys: new Set(["feature","si","pp","ab_channel"]) },
+      { host: /(^|\.)youtu\.be$/i, keys: new Set(["si","feature"]) },
+      { host: /(^|\.)spotify\.com$/i, keys: new Set(["utm_source","utm_medium","utm_campaign","utm_content","go","nd","dlsi","autoplay"]) },
+      { host: /(^|\.)reddit\.com$/i, keys: new Set(["utm_source","utm_medium","utm_name","utm_content","share_id","context"]) },
+      { host: /(^|\.)x\.com$|(^|\.)twitter\.com$/i, keys: new Set(["s","t"]) },
+      { host: /(^|\.)amazon\./i, keys: new Set(["tag","linkcode","camp","creative","creativeasin","ascsubtag","ref_","ref","psc"]) }
+    ];
+
+    const functionalKeyPatterns = [
+      /^id$/i, /^v$/i, /^q$/i, /^query$/i, /^search$/i, /^page$/i, /^p$/i,
+      /^list$/i, /^index$/i, /^t$/i, /^start$/i, /^end$/i, /^lang$/i,
+      /^locale$/i, /^category$/i, /^sort$/i, /^filter/i, /^tab$/i,
+      /^code$/i, /^token$/i, /^key$/i, /^sku$/i, /^product/i, /^variant$/i
+    ];
+
+    function isUrl(s) {
+      try {
+        const u = new URL(s.trim());
+        return u.protocol === "http:" || u.protocol === "https:";
+      } catch { return false; }
+    }
+
+    function shouldRemoveParam(url, key) {
+      const lower = key.toLowerCase();
+      if (functionalKeyPatterns.some(pattern => pattern.test(key))) return false;
+      if (lower.startsWith("utm_")) return true;
+      if (universalTrackingKeys.has(lower)) return true;
+      const rule = hostTrackingRules.find(r => r.host.test(url.hostname));
+      return Boolean(rule && rule.keys.has(lower));
+    }
+
+    function simplifyKnownUrl(url) {
+      const host = url.hostname.toLowerCase().replace(/^www\./, "");
+
+      if (/^google\.[a-z.]+$/i.test(host) && url.pathname === "/search") {
+        const q = url.searchParams.get("q");
+        const tbm = url.searchParams.get("tbm");
+        url.search = "";
+        if (q) url.searchParams.set("q", q);
+        if (tbm) url.searchParams.set("tbm", tbm);
+      }
+
+      if (host === "youtube.com" && url.pathname === "/watch") {
+        const keep = ["v", "list", "index", "t", "start"];
+        [...url.searchParams.keys()].forEach(k => {
+          if (!keep.includes(k)) url.searchParams.delete(k);
+        });
+      }
+
+      if (host === "youtu.be") {
+        [...url.searchParams.keys()].forEach(k => {
+          if (!["t", "start"].includes(k)) url.searchParams.delete(k);
+        });
+      }
+
+      return url;
+    }
+
+    function cleanUrl(raw) {
+      try {
+        const original = raw.trim().replace(/[.,;]+$/, "");
+        const u = new URL(original);
+        if (!stripTracking.checked) return original;
+
+        simplifyKnownUrl(u);
+        [...u.searchParams.keys()].forEach(key => {
+          if (shouldRemoveParam(u, key)) u.searchParams.delete(key);
+        });
+
+        if ((u.protocol === "https:" && u.port === "443") || (u.protocol === "http:" && u.port === "80")) {
+          u.port = "";
+        }
+        return u.toString();
+      } catch {
+        return raw.trim();
+      }
+    }
+
+    function humanize(value) {
+      return value
+        .replace(/\.[a-z0-9]{2,5}$/i, "")
+        .replace(/[-_+]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    function fallbackTitle(rawUrl) {
+      try {
+        const u = new URL(rawUrl);
+        const host = u.hostname.replace(/^www\./, "");
+        if (/^google\./i.test(host) && u.pathname === "/search" && u.searchParams.get("q")) {
+          return `${u.searchParams.get("q")} - Google Search`;
+        }
+        const path = decodeURIComponent(u.pathname).replace(/^\/|\/$/g, "");
+        if (path) {
+          const finalPart = path.split("/").filter(Boolean).pop();
+          const cleaned = humanize(finalPart);
+          if (cleaned && !/^\d+$/.test(cleaned)) return cleaned;
+        }
+        return host;
+      } catch {
+        return rawUrl;
+      }
+    }
+
+    function normalizeTitle(title) {
+      return title
+        .replace(/^\s*(?:[-*•]|\d+[.)])\s+/, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function parseLinks(text) {
+      const lines = text.split(/\r?\n/);
+      const links = [];
+      let pendingTitle = "";
+
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line || /^private$/i.test(line)) continue;
+
+        // Markdown: - [Title](URL), [Title](URL), or numbered Markdown.
+        const md = line.match(/^(?:[-*•]|\d+[.)])?\s*\[([^\]]+)\]\((https?:\/\/.+)\)\s*$/i);
+        if (md) {
+          links.push({ title: normalizeTitle(md[1]), url: cleanUrl(md[2]), titleSource: "provided" });
+          pendingTitle = "";
+          continue;
+        }
+
+        // Safari/Telegram-style: - Title (URL), 1. Title (URL), or Title (URL).
+        const parenthesized = line.match(/^(?:[-*•]|\d+[.)])?\s*(.*?)\s+\((https?:\/\/.+)\)\s*$/i);
+        if (parenthesized) {
+          links.push({
+            title: normalizeTitle(parenthesized[1]) || fallbackTitle(parenthesized[2]),
+            url: cleanUrl(parenthesized[2]),
+            titleSource: parenthesized[1].trim() ? "provided" : "fallback"
+          });
+          pendingTitle = "";
+          continue;
+        }
+
+        // Plain bullet followed by bare URL on the same line.
+        const inlineUrl = line.match(/^(?:[-*•]|\d+[.)])?\s*(.*?)\s+(https?:\/\/\S+)\s*$/i);
+        if (inlineUrl && inlineUrl[1].trim()) {
+          links.push({
+            title: normalizeTitle(inlineUrl[1]),
+            url: cleanUrl(inlineUrl[2]),
+            titleSource: "provided"
+          });
+          pendingTitle = "";
+          continue;
+        }
+
+        if (isUrl(line)) {
+          const url = cleanUrl(line);
+          try {
+            const parsed = new URL(url);
+            if (ignoreSearches.checked && /(^|\.)google\.[^/]+$/i.test(parsed.hostname) && /\/search$/i.test(parsed.pathname)) {
+              pendingTitle = "";
+              continue;
+            }
+          } catch {}
+
+          links.push({
+            title: pendingTitle || fallbackTitle(url),
+            url,
+            titleSource: pendingTitle ? "provided" : "fallback"
+          });
+          pendingTitle = "";
+        } else {
+          pendingTitle = normalizeTitle(line);
+        }
+      }
+
+      let result = links.filter(x => x.url && x.title);
+      if (dedupe.checked) {
+        const seen = new Set();
+        result = result.filter(x => {
+          const key = x.url.replace(/\/$/, "");
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      }
+      if (sort.checked) {
+        result.sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base" }));
+      }
+      return result;
+    }
+
+    function escHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+      })[c]);
+    }
+
+    function escMarkdownTitle(s) {
+      return String(s).replace(/\\/g, "\\\\").replace(/\]/g, "\\]");
+    }
+
+    function escCsv(s) {
+      return '"' + String(s).replaceAll('"', '""') + '"';
+    }
+
+    function richLinesHtml(items, numbered = false) {
+      return items.map((x, i) => {
+        const marker = numbered ? `${i + 1}. ` : "• ";
+        return `<div>${escHtml(marker)}<a href="${escHtml(x.url)}">${escHtml(x.title)}</a></div>`;
+      }).join("");
+    }
+
+    function render(items) {
+      switch (format.value) {
+        case "rich-bullets":
+          return items.map(x => `• ${x.title}`).join("\n");
+        case "rich-numbers":
+          return items.map((x, i) => `${i + 1}. ${x.title}`).join("\n");
+        case "md-bullets":
+          return items.map(x => `${bullet.value || "-"} [${escMarkdownTitle(x.title)}](${x.url})`).join("\n");
+        case "md-numbers":
+          return items.map((x, i) => `${i + 1}. [${escMarkdownTitle(x.title)}](${x.url})`).join("\n");
+        case "plain-bullets":
+          return items.map(x => `${bullet.value || "•"} ${x.title} — ${x.url}`).join("\n");
+        case "plain-numbers":
+          return items.map((x, i) => `${i + 1}. ${x.title} — ${x.url}`).join("\n");
+        case "html-ul":
+          return `<ul>\n${items.map(x => `  <li><a href="${escHtml(x.url)}" target="_blank" rel="noopener noreferrer">${escHtml(x.title)}</a></li>`).join("\n")}\n</ul>`;
+        case "html-ol":
+          return `<ol>\n${items.map(x => `  <li><a href="${escHtml(x.url)}" target="_blank" rel="noopener noreferrer">${escHtml(x.title)}</a></li>`).join("\n")}\n</ol>`;
+        case "json":
+          return JSON.stringify(items.map(({title, url}) => ({title, url})), null, 2);
+        case "csv":
+          return ["title,url", ...items.map(x => `${escCsv(x.title)},${escCsv(x.url)}`)].join("\n");
+        case "inline":
+          return items.map(x => `[${escMarkdownTitle(x.title)}](${x.url})`).join(delimiter.value || " · ");
+        default:
+          return "";
+      }
+    }
+
+    function convert(customItems = null) {
+      const rawUrls = [...input.value.matchAll(/https?:\/\/[^\s)]+/g)].map(m => m[0]);
+      const cleanedCount = rawUrls.filter(url => cleanUrl(url) !== url.trim()).length;
+      currentItems = customItems || parseLinks(input.value);
+      output.value = render(currentItems);
+      $("inputStats").textContent = `${input.value.split(/\r?\n/).length} lines`;
+      $("outputStats").textContent = `${currentItems.length} link${currentItems.length === 1 ? "" : "s"}`;
+      const fallbackCount = currentItems.filter(x => x.titleSource === "fallback").length;
+      message.textContent = currentItems.length
+        ? `Converted ${currentItems.length} links; cleaned ${cleanedCount} URL${cleanedCount === 1 ? "" : "s"}${fallbackCount ? `; ${fallbackCount} title${fallbackCount === 1 ? "" : "s"} can be fetched` : ""}.`
+        : "No links detected.";
+      localStorage.setItem("safari-link-input", input.value);
+      localStorage.setItem("safari-link-format", format.value);
+
+      if (currentItems.length > 0 && !customItems) {
+        saveToHistory(input.value, currentItems.length);
+      }
+    }
+
+    // --- History Logic ---
+    function getHistory() {
+      return JSON.parse(localStorage.getItem("safari-link-history") || "[]");
+    }
+
+    function saveToHistory(rawInput, count) {
+      const history = getHistory();
+      // Avoid duplicate consecutive identical inputs
+      if (history.length > 0 && history[0].input === rawInput) return;
+
+      // Extract a tiny snippet of the first title for display
+      const snippet = rawInput.split('\n').map(l => l.trim()).filter(Boolean).slice(0, 2).join(' / ').substring(0, 48) + '...';
+      const entry = {
+        timestamp: new Date().toLocaleTimeString(),
+        snippet,
+        input: rawInput,
+        count
+      };
+
+      history.unshift(entry);
+      // Limit to 15 items
+      if (history.length > 15) history.pop();
+      localStorage.setItem("safari-link-history", JSON.stringify(history));
+      renderHistory();
+    }
+
+    function loadHistoryItem(index) {
+      const history = getHistory();
+      const item = history[index];
+      if (item) {
+        input.value = item.input;
+        convert();
+        message.textContent = `Restored conversion from history (${item.count} links).`;
+      }
+    }
+
+    function renderHistory() {
+      const list = $("historyList");
+      const history = getHistory();
+      if (history.length === 0) {
+        list.innerHTML = `<div class="history-empty">No conversion history yet. Converted lists will appear here.</div>`;
+        return;
+      }
+
+      list.innerHTML = history.map((item, idx) => `
+        <div class="history-item" onclick="loadHistoryItem(${idx})">
+          <span class="title-text">${escHtml(item.snippet)}</span>
+          <div class="meta">
+            <span class="count">${item.count} links</span>
+            <span class="time">${item.timestamp}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    $("clearHistoryBtn").addEventListener("click", () => {
+      localStorage.removeItem("safari-link-history");
+      renderHistory();
+      message.textContent = "History cleared.";
+    });
+
+    window.loadHistoryItem = loadHistoryItem; // Bind to window for HTML onclick
+
+    async function copyPlainOutput() {
+      if (!output.value) return;
+      try {
+        await navigator.clipboard.writeText(output.value);
+      } catch {
+        output.focus();
+        output.select();
+        document.execCommand("copy");
+      }
+      message.textContent = "Copied plain text.";
+    }
+
+    function copyRichLinks() {
+      if (!currentItems.length) convert();
+      if (!currentItems.length) return;
+
+      const numbered = format.value === "rich-numbers" ||
+        format.value === "md-numbers" ||
+        format.value === "plain-numbers" ||
+        format.value === "html-ol";
+
+      const holder = document.createElement("div");
+      holder.setAttribute("contenteditable", "true");
+      holder.setAttribute("aria-hidden", "true");
+      holder.style.position = "fixed";
+      holder.style.left = "-10000px";
+      holder.style.top = "0";
+      holder.style.width = "700px";
+      holder.style.whiteSpace = "normal";
+      holder.style.font = "16px -apple-system, BlinkMacSystemFont, sans-serif";
+      holder.innerHTML = richLinesHtml(currentItems, numbered);
+      document.body.appendChild(holder);
+
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(holder);
+      selection.removeAllRanges();
+      selection.addRange(range);
+
+      let copied = false;
+      try { copied = document.execCommand("copy"); } catch { copied = false; }
+
+      selection.removeAllRanges();
+      holder.remove();
+
+      if (copied) {
+        message.textContent = numbered
+          ? "Copied numbered rich hyperlinks. Paste directly into Telegram."
+          : "Copied bulleted rich hyperlinks. Paste directly into Telegram.";
+      } else {
+        message.textContent = "Safari blocked rich copying. Select the preview and copy manually.";
+      }
+    }
+    function extractHtmlTitle(html) {
+      const match = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+      if (!match) return "";
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(`<!doctype html><title>${match[1]}</title>`, "text/html");
+      return (doc.title || "").replace(/\s+/g, " ").trim();
+    }
+
+    async function fetchTitleDirect(url) {
+      const response = await fetch(url, {
+        method: "GET",
+        mode: "cors",
+        credentials: "omit",
+        redirect: "follow",
+        headers: { "Accept": "text/html,application/xhtml+xml" }
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const type = response.headers.get("content-type") || "";
+      if (!type.includes("text/html") && !type.includes("application/xhtml+xml")) {
+        throw new Error("Not HTML");
+      }
+      const html = await response.text();
+      return extractHtmlTitle(html);
+    }
+
+    async function fetchTitleRemote(url) {
+      const endpoint = `https://api.microlink.io/?url=${encodeURIComponent(url)}`;
+      const response = await fetch(endpoint, { credentials: "omit" });
+      if (!response.ok) throw new Error(`Metadata HTTP ${response.status}`);
+      const json = await response.json();
+      return json?.data?.title?.trim() || "";
+    }
+
+    async function fetchMissingTitles() {
+      if (!currentItems.length) convert();
+      const missing = currentItems
+        .map((item, index) => ({ item, index }))
+        .filter(({ item }) => item.titleSource === "fallback");
+
+      if (!missing.length) {
+        message.textContent = "All links already have supplied titles.";
+        return;
+      }
+
+      const btn = $("fetchTitlesBtn");
+      btn.disabled = true;
+      let found = 0;
+      let failed = 0;
+
+      for (let i = 0; i < missing.length; i++) {
+        const { item, index } = missing[i];
+        message.textContent = `Fetching title ${i + 1}/${missing.length}: ${new URL(item.url).hostname}`;
+        let title = "";
+
+        try {
+          title = await fetchTitleDirect(item.url);
+        } catch {}
+
+        if (!title && remoteTitles.checked) {
+          try {
+            title = await fetchTitleRemote(item.url);
+          } catch {}
+        }
+
+        if (title) {
+          currentItems[index] = { ...item, title, titleSource: "fetched" };
+          found++;
+        } else {
+          failed++;
+        }
+      }
+
+      btn.disabled = false;
+      output.value = render(currentItems);
+      message.textContent = `Fetched ${found} title${found === 1 ? "" : "s"}${failed ? `; ${failed} unavailable${remoteTitles.checked ? "" : " (enable remote fallback for another attempt)"}` : ""}.`;
+    }
+
+    function downloadOutput() {
+      if (!output.value) return;
+      const ext = format.value === "json" ? "json" : format.value === "csv" ? "csv" : format.value.startsWith("html") ? "html" : "txt";
+      const blob = new Blob([output.value], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `converted-links.${ext}`;
+      a.click();
+      URL.revokeObjectURL(url);
+      message.textContent = "Downloaded output.";
+    }
+
+    $("convertBtn").addEventListener("click", () => convert());
+    $("copyBtn").addEventListener("click", copyPlainOutput);
+    $("copyRichBtn").addEventListener("click", copyRichLinks);
+    $("fetchTitlesBtn").addEventListener("click", fetchMissingTitles);
+    $("downloadBtn").addEventListener("click", downloadOutput);
+
+    $("clearBtn").addEventListener("click", () => {
+      input.value = "";
+      output.value = "";
+      currentItems = [];
+      message.textContent = "";
+      $("inputStats").textContent = "0 lines";
+      $("outputStats").textContent = "0 links";
+      localStorage.removeItem("safari-link-input");
+    });
+
+    $("exampleBtn").addEventListener("click", () => {
+      input.value = `Private
+
+Charli xcx
+https://www.charlixcx.com/
+
+- David Cronenberg - IMDb (https://www.imdb.com/name/nm0000343/)
+
+- The Odyssey Movie (@odysseymovie) / X (https://x.com/odysseymovie)
+
+https://www.youtube.com/watch?v=daXaTug8rL4&utm_source=test`;
+      convert();
+    });
+
+    [format, dedupe, sort, stripTracking, ignoreSearches, bullet, delimiter]
+      .forEach(el => el.addEventListener("change", () => convert()));
+
+    remoteTitles.addEventListener("change", () => {
+      localStorage.setItem("safari-link-remote-titles", remoteTitles.checked ? "1" : "0");
+    });
+
+    input.addEventListener("input", () => {
+      $("inputStats").textContent = `${input.value.split(/\r?\n/).length} lines`;
+    });
+
+    document.addEventListener("keydown", e => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        e.preventDefault();
+        convert();
+      }
+    });
+
+    const savedTheme = localStorage.getItem("safari-link-theme") || "dark";
+    document.documentElement.dataset.theme = savedTheme;
+    $("themeBtn").textContent = savedTheme === "dark" ? "Light mode" : "Dark mode";
+
+    $("themeBtn").addEventListener("click", () => {
+      const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+      document.documentElement.dataset.theme = next;
+      localStorage.setItem("safari-link-theme", next);
+      $("themeBtn").textContent = next === "dark" ? "Light mode" : "Dark mode";
+    });
+
+    input.value = localStorage.getItem("safari-link-input") || "";
+    format.value = localStorage.getItem("safari-link-format") || "rich-bullets";
+    remoteTitles.checked = localStorage.getItem("safari-link-remote-titles") === "1";
+    
+    renderHistory();
+    if (input.value) convert();
+  </script>
+</body>
+</html>

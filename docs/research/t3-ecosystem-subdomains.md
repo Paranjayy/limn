@@ -6,7 +6,25 @@ Curated reconnaissance of the **T3 / pingdotgg (Theo)** agent tooling stack:
 - **postplan.dev** — authenticated static HTML draft publishing for agents
 - **lakebed.dev / lakebed.app** — agent-native CLI + runtime for building and deploying full-stack TypeScript apps ("capsules") on `*.lakebed.app`
 
-Research date: 2026-08-13. Sources: crt.sh (down), certspotter CT, Wayback CDX, web search, live HTTP probing + DNS.
+Research date: 2026-08-13. Sources: crt.sh (down), certspotter CT, Wayback CDX, web search, live HTTP probing + DNS wildcard checks.
+
+---
+
+## 0. Wildcard DNS & Routing Infrastructure (Round 2 Discovery)
+
+A key finding from comprehensive DNS probing is that **all 4 domains use wildcard routing**:
+
+- `*.lakebed.app` points to `bsxsznmc.up.railway.app` (Railway IP `69.46.46.101`).
+- `*.postplan.dev` points to `qgxa1awy.up.railway.app` (Railway IP `69.46.46.71`).
+- `*.lakebed.dev` points to a Fly-like network IP pool (`216.150.1.x` and `216.150.16.x`).
+- `*.10xn.dev` points to the same `216.150.1.x`/`216.150.16.x` IP pool.
+
+**Insight**: Because of wildcard DNS, *any* subdomain query resolves (e.g. `anything.lakebed.app` resolves to Railway). Brute-forcing subdomains confirms this catch-all behavior. The real app/capsule isolation happens at the HTTP routing layer (the ingress router reads the Host header and maps it to the target container/worker).
+
+However, specific critical service subdomains are pinned to distinct Railway endpoints:
+- `api.lakebed.dev` → `dmzcxtgj.up.railway.app`
+- `auth.lakebed.dev` → `klb9hb90.up.railway.app`
+- `dashboard.lakebed.dev` → `mij76mso.up.railway.app`
 
 ---
 
@@ -46,6 +64,7 @@ Dynamic subdomains; only a handful are archived/indexed (wildcard cert `*.postpl
 
 | Deployment URL | Status | Title | Notes |
 |---|---|---|---|
+| `https://6xhul3gwy81u.postplan.dev/` | 200 | Filesystem platform comparison | Warm-store benchmarks for pnpm and XFS over VDO vs APFS macOS. |
 | `https://tltqzg56k26j.postplan.dev/` | 200 | pstack fit audit | Fit-audit report for Cursor's **pstack** plugin skills. |
 | `https://pmldo09w8l3r.postplan.dev/` | 200 | mattpocock skills fit audit | Fit-audit of **Matt Pocock**'s skills. |
 | `https://hsyscdqldmk5.postplan.dev/` | 200 | T3 Code — Sidebar v2 Concepts | Theo's T3 Code product-design concept page. |
@@ -96,6 +115,7 @@ Where every hosted capsule gets a subdomain. Users claim deploys and can reserve
 | `docs.lakebed.app` | 200 | (anonymous deploy runner) | Docs host. |
 | `staging.lakebed.app` | 000 | — | Staging apex (down at scan time). |
 | `lakebed.lakebed.app` | 200 | notarickroll | Dogfood capsule — "not a rickroll". |
+| `llm-pps.lakebed.app` | 200 | deepswe-performance | DeepSWE worker prompt-per-second performance metrics tracking dashboard. |
 
 ### Community / demo capsules (named)
 
