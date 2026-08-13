@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Limn — the agent-native deploy platform</title>
+<meta name="description" content="Limn is an agent-native CLI and runtime for building and deploying small full-stack apps — capsules — without leaving your agent.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0c0f0d;
+    --ink-2: #11150f;
+    --paper: #e9e4d5;
+    --paper-dim: #b7b2a1;
+    --accent: #c9a227;
+    --line: rgba(233, 228, 213, 0.14);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: "Inter", system-ui, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection { background: var(--accent); color: var(--ink); }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 32px; }
+
+  nav {
+    position: fixed; inset: 0 0 auto 0; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 32px;
+    background: linear-gradient(var(--ink) 70%, transparent);
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand .dot { color: var(--accent); font-weight: 600; }
+  .brand b { font-size: 15px; letter-spacing: 2px; text-transform: uppercase; font-weight: 600; }
+  nav .links { display: flex; gap: 26px; font-size: 13.5px; }
+  nav .links a { color: var(--paper-dim); text-decoration: none; transition: color .2s; }
+  nav .links a:hover { color: var(--paper); }
+
+  header.hero {
+    min-height: 92vh;
+    display: flex; flex-direction: column; justify-content: center;
+    position: relative;
+  }
+  .hero-inner { position: relative; z-index: 2; }
+  .eyebrow {
+    font-size: 12.5px; letter-spacing: 3.5px; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 28px; font-weight: 600;
+  }
+  h1 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 400;
+    font-size: clamp(44px, 8.5vw, 108px);
+    line-height: 0.98;
+    letter-spacing: -0.02em;
+    max-width: 13ch;
+  }
+  h1 em { font-style: italic; color: var(--accent); }
+  .hero-sub {
+    margin-top: 34px; max-width: 52ch;
+    color: var(--paper-dim); font-size: clamp(16px, 2vw, 19px); font-weight: 400;
+  }
+  .cta-row { margin-top: 44px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-block; padding: 15px 26px; font-size: 14.5px; font-weight: 600;
+    border-radius: 3px; text-decoration: none; letter-spacing: 0.2px;
+    transition: transform .15s ease, background .2s;
+  }
+  .btn-primary { background: var(--accent); color: var(--ink); }
+  .btn-primary:hover { transform: translateY(-2px); }
+  .btn-ghost { border: 1px solid var(--line); color: var(--paper); }
+  .btn-ghost:hover { border-color: var(--paper-dim); }
+  code.inline {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.85em;
+    background: rgba(233,228,213,0.08); border: 1px solid var(--line);
+    padding: 2px 7px; border-radius: 4px; color: var(--paper);
+  }
+
+  .ridge {
+    position: absolute; inset: auto 0 0 0; height: 40vh; pointer-events: none;
+    opacity: 0.5;
+    background:
+      radial-gradient(60% 80% at 50% 120%, rgba(201,162,39,0.10), transparent 70%),
+      linear-gradient(180deg, transparent, rgba(0,0,0,0.35));
+  }
+
+  section { padding: 120px 0; position: relative; }
+  .label {
+    font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--accent);
+    font-weight: 600; margin-bottom: 18px;
+  }
+  h2 {
+    font-family: "Fraunces", Georgia, serif; font-weight: 400;
+    font-size: clamp(30px, 4.5vw, 54px); line-height: 1.05; letter-spacing: -0.01em;
+    max-width: 22ch; margin-bottom: 30px;
+  }
+  .lead { color: var(--paper-dim); font-size: 17px; max-width: 64ch; }
+  .lead b { color: var(--paper); font-weight: 500; }
+
+  .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-top: 54px; }
+  .card {
+    border: 1px solid var(--line); border-radius: 8px; padding: 30px 26px;
+    background: linear-gradient(160deg, rgba(233,228,213,0.035), transparent 60%);
+    transition: transform .2s ease, border-color .2s;
+  }
+  .card:hover { transform: translateY(-3px); border-color: rgba(201,162,39,0.4); }
+  .card .n { color: var(--accent); font-size: 13px; letter-spacing: 2px; font-weight: 600; }
+  .card h3 { font-size: 19px; font-weight: 600; margin: 14px 0 10px; font-family: "Fraunces", serif; font-weight: 500; }
+  .card p { color: var(--paper-dim); font-size: 14.5px; }
+
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: start; }
+  .split .right { border: 1px solid var(--line); border-radius: 8px; padding: 26px; background: #0e120d; }
+  .split .right pre {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px;
+    color: var(--paper); line-height: 1.7; overflow-x: auto;
+  }
+  .split .right pre .cm { color: #5d6152; }
+  .split .right pre .kw { color: var(--accent); }
+
+  .steps { margin-top: 54px; display: grid; gap: 14px; counter-reset: step; }
+  .step { display: flex; gap: 22px; align-items: baseline; border-bottom: 1px solid var(--line); padding: 22px 4px; }
+  .step .num { font-family: "Fraunces", serif; font-size: 26px; color: var(--accent); width: 46px; flex: none; }
+  .step .body h3 { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+  .step .body p { color: var(--paper-dim); font-size: 14.5px; }
+
+  .manifesto p { font-size: 18px; color: var(--paper); max-width: 60ch; }
+  .manifesto p + p { margin-top: 18px; }
+  .manifesto .accent { color: var(--accent); font-style: italic; font-family: "Fraunces", serif; font-size: 1.1em; }
+
+  footer { border-top: 1px solid var(--line); padding: 46px 0 60px; }
+  footer .wrap { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+  footer p, footer a { color: var(--paper-dim); font-size: 13px; text-decoration: none; }
+  footer a:hover { color: var(--paper); }
+
+  @media (max-width: 760px) {
+    .split { grid-template-columns: 1fr; gap: 34px; }
+    nav .links { display: none; }
+    section { padding: 90px 0; }
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+  .reveal { animation: rise .8s ease both; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand"><b>Limn</b><span class="dot">●</span></div>
+  <div class="links">
+    <a href="#platform">Platform</a>
+    <a href="#capsule">Capsule</a>
+    <a href="#vision">Vision</a>
+    <a href="#docs">Docs</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap hero-inner">
+    <div class="eyebrow reveal">Agent-native · full-stack · one command</div>
+    <h1 class="reveal">Build the whole app.<br>Let the <em>agent</em> ship it.</h1>
+    <p class="hero-sub reveal">
+      Limn is a CLI and runtime for building and deploying small full-stack TypeScript
+      apps — <em>capsules</em> — without leaving your agent. One server file, one client
+      file, a database, auth, storage, logs, and a live URL. All of it.
+    </p>
+    <div class="cta-row reveal">
+      <a class="btn btn-primary" href="#capsule">Read the vision</a>
+      <a class="btn btn-ghost" href="#docs">View docs</a>
+    </div>
+  </div>
+  <div class="ridge"></div>
+</header>
+
+<section id="platform">
+  <div class="wrap">
+    <div class="label">The platform</div>
+    <h2>A deploy platform that treats the agent as the user.</h2>
+    <p class="lead">
+      <b>Every line of Limn is written for agents.</b> The capsule directory <i>is</i> the app.
+      The CLI is the entire surface. The docs ship raw markdown and <code class="inline">llms.txt</code>
+      so a coding agent can go from idea to deployed URL in one session.
+    </p>
+    <div class="grid3">
+      <div class="card"><div class="n">01</div><h3>Model-agnostic</h3><p>Works with any provider and any harness — Claude Code, Codex, your own. No lock-in, ever.</p></div>
+      <div class="card"><div class="n">02</div><h3>Full-stack capsule</h3><p>DB, auth, object storage, logs, deploys. The runtime ships the boring parts so you ship the app.</p></div>
+      <div class="card"><div class="n">03</div><h3>Inspectable state</h3><p>Dump tables, tail logs, and export data from the CLI. Guess less, look more.</p></div>
+      <div class="card"><div class="n">04</div><h3>Subdomains by default</h3><p>Every deploy gets a live URL. Claim it, name it, point your own domain at it.</p></div>
+      <div class="card"><div class="n">05</div><h3>Cheap to run</h3><p>Anonymous deploys expire. Idle cost is near zero. Build throwaway things freely.</p></div>
+      <div class="card"><div class="n">06</div><h3>Plugin market</h3><p>A store for extensions and integrations — Raycast-style, Chrome-style, everything is an add-on.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="capsule" style="background: var(--ink-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);">
+  <div class="wrap">
+    <div class="label">The capsule</div>
+    <h2>Small by design. Ship fast, iterate faster.</h2>
+    <div class="split">
+      <div>
+        <p class="lead" style="margin-bottom: 26px;">
+          A capsule is one complete app in a single directory. The contract is deliberately tiny
+          so an agent can hold the whole thing in context.
+        </p>
+        <div class="steps">
+          <div class="step"><div class="num">1</div><div class="body"><h3>Scaffold</h3><p>Create a capsule from a template in one command.</p></div></div>
+          <div class="step"><div class="num">2</div><div class="body"><h3>Write the contract</h3><p>Server handlers, Preact client, shared types. Types flow end to end.</p></div></div>
+          <div class="step"><div class="num">3</div><div class="body"><h3>Deploy</h3><p>Publish anonymously, then claim it. Live URL, logs, and DB in your terminal.</p></div></div>
+        </div>
+      </div>
+      <div class="right">
+<pre><span class="cm"># one capsule = one directory</span>
+.
+<span>├── server/index.ts      <span class="cm"># schema, queries, mutations</span></span>
+<span>├── client/index.tsx     <span class="cm"># Preact UI</span></span>
+<span>├── shared/              <span class="cm"># pure TS, both sides</span></span>
+<span>└── .env.lakebed.server  <span class="cm"># server-only secrets</span></span>
+
+<span class="kw">npx limn</span> new my-app --template todo
+<span class="kw">npx limn</span> dev
+<span class="kw">npx limn</span> deploy          <span class="cm"># → https://quiet-river-99404a.limn.app</span>
+<span class="kw">npx limn</span> claim           <span class="cm"># keep it forever</span>
+<span class="kw">npx limn</span> db dump <span class="cm">&lt;url&gt;</span>    <span class="cm"># inspect live state</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="vision">
+  <div class="wrap manifesto">
+    <div class="label">The vision</div>
+    <h2>Not another platform. The agent's OS.</h2>
+    <p>
+      The next generation of tools won't be an app you open — it'll be a <span class="accent">capability
+      layer</span> your agent reaches for. Deploys, telemetry, integrations, home automation,
+      one-off generators: a store of extensions on top of a single harness.
+    </p>
+    <p>
+      Limn is the beginning of that. A model- and provider-agnostic core where the UI is optional,
+      the CLI is the API, the docs are written for machines, and every idea gets a URL before
+      lunch.
+    </p>
+  </div>
+</section>
+
+<section id="docs" style="padding-top: 0;">
+  <div class="wrap">
+    <div class="label">Docs</div>
+    <h2 style="font-size: clamp(26px, 3.4vw, 40px);">Built for you and your agent.</h2>
+    <p class="lead" style="margin-bottom: 40px;">Read them as a human, or feed them to a model. Same words, same structure.</p>
+    <div class="cta-row">
+      <a class="btn btn-ghost" href="#">Reference</a>
+      <a class="btn btn-ghost" href="#">Capsule API</a>
+      <a class="btn btn-ghost" href="#">Auth contract</a>
+      <a class="btn btn-ghost" href="#">llms.txt</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b style="color: var(--paper);">Limn</b> — an agent-native deploy platform. Early alpha, dogfooding daily.</p>
+    <p><a href="#">Research notes</a> · <a href="#">Status</a> · <a href="#">Report abuse</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
