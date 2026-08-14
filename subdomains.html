@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ecosystem Subdomain Analyzer · Limn</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07090f;
+      --panel: #10141f;
+      --panel-2: #0c1018;
+      --text: #e7ecf6;
+      --muted: #93a0ba;
+      --dim: #55617c;
+      --line: rgba(148, 163, 199, 0.10);
+      --line-strong: rgba(148, 163, 199, 0.18);
+      --accent: #6d5ef0;
+      --accent-hi: #8f83ff;
+      --accent-deep: #4636c9;
+      --good: #3ee0c8;
+      --danger: #ff6b6b;
+      --shadow: 0 12px 36px rgba(0,0,0,.35);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      background-image:
+        radial-gradient(1100px 600px at 85% -10%, rgba(109,94,240,0.06), transparent 60%),
+        radial-gradient(900px 500px at -10% 30%, rgba(62,224,200,0.03), transparent 60%);
+    }
+    a { color: var(--accent-hi); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 22px 22px 48px; }
+
+    /* ---------- Header ---------- */
+    header {
+      display: flex; justify-content: space-between; align-items: center; gap: 20px;
+      margin-bottom: 22px; padding-bottom: 14px; border-bottom: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: baseline; gap: 10px; }
+    .brand h1 { font-size: clamp(1.25rem, 2.5vw, 1.8rem); font-weight: 600; letter-spacing: -0.02em; }
+    .brand h1 em { font-style: normal; color: var(--accent-hi); }
+    .brand .tag {
+      font-size: 11px; background: rgba(109,94,240,0.12); color: var(--accent-hi);
+      padding: 2px 8px; border-radius: 99px; border: 1px solid rgba(109,94,240,0.2);
+    }
+
+    /* ---------- Workspace Layout ---------- */
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    /* ---------- Sandbox Tools ---------- */
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .card-head {
+      padding: 14px 18px; border-bottom: 1px solid var(--line);
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      background: var(--panel-2);
+    }
+    .card-head strong { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+    .card-body { padding: 20px; }
+
+    /* ---------- Sandbox Input ---------- */
+    .sandbox-row {
+      display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;
+    }
+    input[type="text"] {
+      flex: 1; min-width: 260px;
+      background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+      border-radius: var(--radius-sm); padding: 10px 14px; outline: none; transition: border-color 0.15s;
+    }
+    input[type="text"]:focus { border-color: var(--accent); }
+    button {
+      border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+      padding: 10px 18px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 500;
+      transition: all 0.15s;
+    }
+    button:hover { border-color: var(--line-strong); background: var(--panel); }
+    button.primary { background: var(--accent); color: #ffffff; border-color: transparent; font-weight: 600; }
+    button.primary:hover { background: var(--accent-hi); }
+
+    .sandbox-results {
+      font-family: var(--font-mono); font-size: 13px; background: var(--panel-2);
+      padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-sm);
+      min-height: 48px; line-height: 1.6;
+    }
+    .result-row { display: flex; justify-content: space-between; border-bottom: 1px dashed var(--line); padding: 4px 0; }
+    .result-row:last-child { border-bottom: none; }
+    .result-row span { color: var(--muted); }
+    .result-row b { color: var(--text); }
+
+    /* ---------- Filters ---------- */
+    .filter-bar {
+      display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .filters-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter-btn {
+      padding: 6px 12px; font-size: 12.5px; border-radius: 99px; border: 1px solid var(--line);
+      background: var(--panel); color: var(--muted);
+    }
+    .filter-btn:hover { color: var(--text); border-color: var(--line-strong); }
+    .filter-btn.active { background: var(--accent); color: #ffffff; border-color: transparent; }
+
+    /* ---------- Subdomain Table ---------- */
+    .table-wrap {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;
+    }
+    th, td { padding: 12px 16px; border-bottom: 1px solid var(--line); }
+    th {
+      font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 1px;
+      color: var(--muted); background: var(--panel-2);
+    }
+    tr:hover td { background: rgba(148, 163, 199, 0.02); }
+    
+    .status-dot {
+      display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px;
+      background: var(--dim);
+    }
+    .status-dot.active { background: var(--good); box-shadow: 0 0 8px var(--good); }
+    .status-dot.dead { background: var(--danger); }
+    .status-dot.checking { background: var(--accent-hi); animation: pulse 1s infinite; }
+    
+    @keyframes pulse { 50% { opacity: 0.5; } }
+
+    .dns-ip { font-family: var(--font-mono); color: var(--accent-hi); font-size: 12px; }
+    .dns-type {
+      font-size: 10.5px; font-weight: 600; text-transform: uppercase;
+      padding: 1px 6px; border-radius: 4px; background: rgba(148, 163, 199, 0.08);
+      color: var(--muted); border: 1px solid var(--line);
+    }
+
+    .meta-tag {
+      font-size: 11px; color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <h1><a href="/">Limn</a> / <em>Ecosystem Analyzer</em></h1>
+        <span class="tag">analysis</span>
+      </div>
+      <button onclick="location.href='/'">Back to Home</button>
+    </header>
+
+    <div class="dashboard">
+      <!-- DNS Sandbox Tool -->
+      <article class="card">
+        <div class="card-head">
+          <strong>Wildcard DNS Sandbox & Router Explorer</strong>
+        </div>
+        <div class="card-body">
+          <p class="meta-tag" style="margin-bottom: 10px;">
+            Input any dynamic subdomain (e.g. <code>baker-wars.lakebed.app</code> or <code>tltqzg56k26j.postplan.dev</code>) to run a live Cloudflare DNS-over-HTTPS (DoH) A-Record lookup.
+          </p>
+          <div class="sandbox-row">
+            <input type="text" id="sandboxInput" placeholder="Enter subdomain (e.g. theoideadump.lakebed.app)" />
+            <button class="primary" id="analyzeBtn">Analyze Subdomain</button>
+          </div>
+          <div class="sandbox-results" id="sandboxResults">
+            Enter a domain name above and click Analyze.
+          </div>
+        </div>
+      </article>
+
+      <!-- Subdomain Matrix -->
+      <article class="card">
+        <div class="card-head">
+          <strong>Subdomain Matrix & Live Probes</strong>
+          <button id="probeAllBtn" class="primary" style="padding: 4px 10px; font-size: 11px;">Probe All Live</button>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <div class="filter-bar" style="padding: 14px 18px; border-bottom: 1px solid var(--line);">
+            <div class="filters-group" id="filterGroup">
+              <button class="filter-btn active" data-filter="all">All</button>
+              <button class="filter-btn" data-filter="lakebed.app">lakebed.app (Capsules)</button>
+              <button class="filter-btn" data-filter="lakebed.dev">lakebed.dev (Services)</button>
+              <button class="filter-btn" data-filter="postplan.dev">postplan.dev (Drafts)</button>
+              <button class="filter-btn" data-filter="10xn.dev">10xn.dev (Creator)</button>
+            </div>
+            <div class="stats" id="subdomainCount">0 subdomains mapped</div>
+          </div>
+          <div class="table-wrap">
+            <table id="subdomainTable">
+              <thead>
+                <tr>
+                  <th>Subdomain</th>
+                  <th>DNS Status</th>
+                  <th>IP Resolution</th>
+                  <th>Routing Target / Provider</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const SUBDOMAINS = [
+      // 10xn.dev
+      { host: "10xn.dev", group: "10xn.dev", desc: "Creator network home page", provider: "Apex / Fly pool" },
+      { host: "www.10xn.dev", group: "10xn.dev", desc: "Apex www mirror", provider: "Fly pool" },
+      { host: "soon.10xn.dev", group: "10xn.dev", desc: "Archived teaser page", provider: "Fly pool" },
+      { host: "docs.10xn.dev", group: "10xn.dev", desc: "Reserved documentation alias", provider: "Fly pool" },
+      
+      // postplan.dev
+      { host: "postplan.dev", group: "postplan.dev", desc: "Postplan home page", provider: "Railway Ingress" },
+      { host: "api.postplan.dev", group: "postplan.dev", desc: "Backend API endpoint (qgxa1awy)", provider: "Railway backend" },
+      { host: "app.postplan.dev", group: "postplan.dev", desc: "Drafts app host", provider: "Railway" },
+      { host: "6xhul3gwy81u.postplan.dev", group: "postplan.dev", desc: "Filesystem comparison draft", provider: "Wildcard Capsule" },
+      { host: "tltqzg56k26j.postplan.dev", group: "postplan.dev", desc: "pstack Cursor plugin audit", provider: "Wildcard Capsule" },
+      { host: "pmldo09w8l3r.postplan.dev", group: "postplan.dev", desc: "mattpocock skills audit", provider: "Wildcard Capsule" },
+      { host: "hsyscdqldmk5.postplan.dev", group: "postplan.dev", desc: "T3 Code Sidebar v2 concepts", provider: "Wildcard Capsule" },
+
+      // lakebed.dev
+      { host: "lakebed.dev", group: "lakebed.dev", desc: "Lakebed platform landing", provider: "Fly pool" },
+      { host: "www.lakebed.dev", group: "lakebed.dev", desc: "Landing mirror", provider: "Fly pool" },
+      { host: "docs.lakebed.dev", group: "lakebed.dev", desc: "Full agent-first documentation site", provider: "Fly pool" },
+      { host: "api.lakebed.dev", group: "lakebed.dev", desc: "Deploy API (dmzcxtgj)", provider: "Railway" },
+      { host: "auth.lakebed.dev", group: "lakebed.dev", desc: "Identity & SSO provider (klb9hb90)", provider: "Railway" },
+      { host: "dashboard.lakebed.dev", group: "lakebed.dev", desc: "Deploys Dashboard SPA (mij76mso)", provider: "Railway" },
+      { host: "admin.lakebed.dev", group: "lakebed.dev", desc: "Reserved admin alias", provider: "Fly pool" },
+      { host: "new.lakebed.dev", group: "lakebed.dev", desc: "Templates template host", provider: "Fly pool" },
+
+      // lakebed.app
+      { host: "lakebed.app", group: "lakebed.app", desc: "Apex capsule host domain (404 catch-all)", provider: "Railway Ingress" },
+      { host: "www.lakebed.app", group: "lakebed.app", desc: "Web app runner landing (bsxsznmc)", provider: "Railway" },
+      { host: "api.lakebed.app", group: "lakebed.app", desc: "Anonymous deploy endpoint", provider: "Railway" },
+      { host: "docs.lakebed.app", group: "lakebed.app", desc: "Capsules docs endpoint", provider: "Railway" },
+      { host: "llm-pps.lakebed.app", group: "lakebed.app", desc: "deepswe prompt-per-second monitor", provider: "Dynamic Capsule" },
+      { host: "theoideadump.lakebed.app", group: "lakebed.app", desc: "Theo's public ideas dump capsule", provider: "Dynamic Capsule" },
+      { host: "badlogic-list.lakebed.app", group: "lakebed.app", desc: "Rants & RSS feed capsule", provider: "Dynamic Capsule" },
+      { host: "baker-wars.lakebed.app", group: "lakebed.app", desc: "Interactive game capsule", provider: "Dynamic Capsule" },
+      { host: "dinorip.lakebed.app", group: "lakebed.app", desc: "Meme capsule", provider: "Dynamic Capsule" },
+      { host: "realcard.lakebed.app", group: "lakebed.app", desc: "Pokémon-style card collector capsule", provider: "Dynamic Capsule" },
+      { host: "lakebed.lakebed.app", group: "lakebed.app", desc: "notarickroll capsule", provider: "Dynamic Capsule" }
+    ];
+
+    let currentFilter = "all";
+
+    async function dnsLookup(domain) {
+      try {
+        const url = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=A`;
+        const response = await fetch(url, { headers: { "Accept": "application/dns-json" } });
+        if (!response.ok) return null;
+        const json = await response.json();
+        return json.Answer || [];
+      } catch {
+        return null;
+      }
+    }
+
+    function getProviderInfo(ips, domain) {
+      if (!ips || ips.length === 0) return "No A records found";
+      const ip = ips[0];
+      if (ip.startsWith("69.46.46")) {
+        return "Railway Wildcard Router (Ingress)";
+      }
+      if (ip.startsWith("216.150")) {
+        return "Fly.io Custom Pool IP";
+      }
+      return "External IP Resolution";
+    }
+
+    async function probeSubdomain(host, rowEl) {
+      const statusDot = rowEl.querySelector(".status-dot");
+      const ipEl = rowEl.querySelector(".dns-ip");
+      const providerEl = rowEl.querySelector(".dns-provider");
+
+      statusDot.className = "status-dot checking";
+
+      const answers = await dnsLookup(host);
+      
+      if (answers && answers.length > 0) {
+        statusDot.className = "status-dot active";
+        const ips = answers.map(a => a.data).join(", ");
+        ipEl.textContent = ips;
+        providerEl.innerHTML = `<span class="dns-type">${answers[0].type === 5 ? 'CNAME' : 'A'}</span> ` + getProviderInfo(answers.map(a => a.data), host);
+      } else {
+        statusDot.className = "status-dot dead";
+        ipEl.textContent = "—";
+        providerEl.textContent = "Unresolved DNS";
+      }
+    }
+
+    function renderTable() {
+      const tbody = $("subdomainTable").querySelector("tbody");
+      const filtered = SUBDOMAINS.filter(s => currentFilter === "all" || s.group === currentFilter);
+      $("subdomainCount").textContent = `${filtered.length} subdomains listed`;
+      
+      tbody.innerHTML = filtered.map((item) => `
+        <tr data-host="${item.host}">
+          <td><a href="https://${item.host}/" target="_blank">${item.host}</a></td>
+          <td><span class="status-dot"></span><span class="status-label">Idle</span></td>
+          <td class="dns-ip">—</td>
+          <td class="dns-provider">${item.provider}</td>
+          <td style="color: var(--muted);">${item.desc}</td>
+        </tr>
+      `).join("");
+    }
+
+    // Filters wiring
+    $("filterGroup").addEventListener("click", (e) => {
+      if (e.target.classList.contains("filter-btn")) {
+        [...$("filterGroup").querySelectorAll(".filter-btn")].forEach(b => b.classList.remove("active"));
+        e.target.classList.add("active");
+        currentFilter = e.target.dataset.filter;
+        renderTable();
+      }
+    });
+
+    // Probe Actions
+    $("probeAllBtn").addEventListener("click", async () => {
+      const rows = [...$("subdomainTable").querySelectorAll("tbody tr")];
+      for (const row of rows) {
+        const host = row.dataset.host;
+        await probeSubdomain(host, row);
+      }
+    });
+
+    // Sandbox analysis
+    $("analyzeBtn").addEventListener("click", async () => {
+      const domain = $("sandboxInput").value.trim();
+      const resultsDiv = $("sandboxResults");
+      if (!domain) {
+        resultsDiv.textContent = "Please enter a valid subdomain.";
+        return;
+      }
+      
+      resultsDiv.innerHTML = "Initializing DoH request to Cloudflare...";
+      const answers = await dnsLookup(domain);
+      
+      if (!answers || answers.length === 0) {
+        resultsDiv.innerHTML = `<div class="result-row"><span>Status</span><b style="color:var(--danger)">Unresolved / Offline</b></div>
+<div class="result-row"><span>Details</span><b>No DNS A/CNAME records found. The capsule may have expired or is dead.</b></div>`;
+        return;
+      }
+
+      const answersHTML = answers.map(a => `
+        <div class="result-row"><span>Type</span><b>${a.type === 5 ? 'CNAME (Redirect)' : 'A (Address)'}</b></div>
+        <div class="result-row"><span>Target IP/Data</span><b class="dns-ip">${a.data}</b></div>
+      `).join("");
+
+      const primaryIP = answers[0].data;
+      const provider = getProviderInfo(answers.map(a => a.data), domain);
+
+      resultsDiv.innerHTML = `
+        <div class="result-row"><span>Query Domain</span><b>${domain}</b></div>
+        <div class="result-row"><span>Status</span><b style="color:var(--good)">Active DNS</b></div>
+        ${answersHTML}
+        <div class="result-row"><span>Resolved Provider</span><b>${provider}</b></div>
+      `;
+    });
+
+    // Init
+    renderTable();
+  </script>
+</body>
+</html>
