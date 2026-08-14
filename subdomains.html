@@ -173,7 +173,10 @@
         <h1><a href="/">Limn</a> / <em>Ecosystem Analyzer</em></h1>
         <span class="tag">analysis</span>
       </div>
-      <button onclick="location.href='/'">Back to Home</button>
+      <div style="display:flex; gap:10px;">
+        <button id="exportDiagnosticsBtn" class="primary">Export Diagnostics</button>
+        <button onclick="location.href='/'">Back to Home</button>
+      </div>
     </header>
 
     <div class="dashboard">
@@ -437,6 +440,27 @@
         ${answersHTML}
         <div class="result-row"><span>Resolved Provider</span><b>${provider}</b></div>
       `;
+    });
+
+    $("exportDiagnosticsBtn").addEventListener("click", () => {
+      const rows = [...$("subdomainTable").querySelectorAll("tbody tr")];
+      const data = rows.map(row => {
+        return {
+          subdomain: row.dataset.host,
+          status: row.querySelector(".status-label").textContent,
+          ip: row.querySelector(".dns-ip").textContent,
+          provider: row.querySelector(".dns-provider").textContent,
+          description: row.cells[4].textContent
+        };
+      });
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `limn-subdomain-diagnostics-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
     });
 
     // Init
