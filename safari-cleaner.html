@@ -12,217 +12,333 @@
       --panel-2: #0c1018;
       --text: #e7ecf6;
       --muted: #93a0ba;
+      --dim: #55617c;
       --line: rgba(148, 163, 199, 0.10);
+      --line-strong: rgba(148, 163, 199, 0.18);
       --accent: #6d5ef0;
+      --accent-hi: #8f83ff;
+      --accent-deep: #4636c9;
       --good: #3ee0c8;
       --danger: #ff6b6b;
-      --shadow: 0 18px 45px rgba(0,0,0,.28);
+      --shadow: 0 12px 36px rgba(0,0,0,.35);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
     :root[data-theme="light"] {
       color-scheme: light;
-      --bg: #f4f6f8;
+      --bg: #f4f6f9;
       --panel: #ffffff;
-      --panel-2: #f7f9fb;
-      --text: #17191d;
-      --muted: #66717d;
-      --line: #dbe1e7;
-      --accent: #2367d1;
-      --good: #177a45;
-      --danger: #b42318;
-      --shadow: 0 18px 45px rgba(30,50,70,.10);
+      --panel-2: #edf0f5;
+      --text: #0f121d;
+      --muted: #5e6678;
+      --dim: #8b95a5;
+      --line: rgba(15, 18, 29, 0.08);
+      --line-strong: rgba(15, 18, 29, 0.15);
+      --accent: #5c4ee3;
+      --accent-hi: #7c6cf6;
+      --accent-deep: #3c30ad;
+      --good: #1a9e88;
+      --danger: #e34e4e;
+      --shadow: 0 12px 36px rgba(30,50,70,.08);
     }
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      margin: 0;
       min-height: 100vh;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background:
-        radial-gradient(circle at top left, rgba(109,94,240,.10), transparent 28rem),
-        var(--bg);
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
       color: var(--text);
+      line-height: 1.5;
+      background-image:
+        radial-gradient(1100px 600px at 85% -10%, rgba(109,94,240,0.06), transparent 60%),
+        radial-gradient(900px 500px at -10% 30%, rgba(62,224,200,0.03), transparent 60%);
     }
-    .wrap { max-width: 1280px; margin: 0 auto; padding: 28px 18px 48px; }
+    a { color: var(--accent-hi); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap { max-width: 1440px; margin: 0 auto; padding: 22px 22px 48px; }
+
+    /* ---------- Header ---------- */
     header {
-      display: flex; justify-content: space-between; gap: 16px; align-items: start;
-      margin-bottom: 20px;
+      display: flex; justify-content: space-between; align-items: center; gap: 20px;
+      margin-bottom: 22px; padding-bottom: 14px; border-bottom: 1px solid var(--line);
     }
-    h1 { font-size: clamp(1.55rem, 3vw, 2.35rem); margin: 0 0 6px; letter-spacing: -.035em; }
-    .sub { margin: 0; color: var(--muted); line-height: 1.55; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-    .card {
-      background: color-mix(in srgb, var(--panel) 94%, transparent);
+    .brand { display: flex; align-items: baseline; gap: 10px; }
+    .brand h1 { font-size: clamp(1.25rem, 2.5vw, 1.8rem); font-weight: 600; letter-spacing: -0.02em; }
+    .brand h1 em { font-style: normal; color: var(--accent-hi); }
+    .brand .tag {
+      font-size: 11px; background: rgba(109,94,240,0.12); color: var(--accent-hi);
+      padding: 2px 8px; border-radius: 99px; border: 1px solid rgba(109,94,240,0.2);
+    }
+    .header-ctrls { display: flex; align-items: center; gap: 10px; }
+
+    /* ---------- Workspace Layout ---------- */
+    .workspace {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 1024px) {
+      .workspace { grid-template-columns: 1fr; }
+    }
+
+    /* ---------- Sidebar (History) ---------- */
+    .sidebar {
+      background: var(--panel);
       border: 1px solid var(--line);
-      border-radius: 18px;
+      border-radius: var(--radius);
       box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 120px);
+      position: sticky;
+      top: 90px;
       overflow: hidden;
     }
+    @media (max-width: 1024px) {
+      .sidebar { height: 320px; position: relative; top: 0; }
+    }
+    .sidebar-head {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel-2);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .sidebar-title-row {
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .sidebar-title-row h2 {
+      font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; color: var(--text);
+    }
+    .search-box {
+      width: 100%; position: relative;
+    }
+    .search-box input {
+      width: 100%; padding: 8px 12px; font-size: 13px; border-radius: var(--radius-sm);
+      border: 1px solid var(--line); background: var(--panel); color: var(--text);
+      outline: none; transition: border-color 0.15s;
+    }
+    .search-box input:focus { border-color: var(--accent); }
+    
+    .history-list {
+      flex: 1; overflow-y: auto; padding: 12px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .history-item {
+      display: flex; flex-direction: column; gap: 4px; padding: 10px 12px;
+      background: var(--panel-2); border: 1px solid var(--line);
+      border-radius: var(--radius-sm); cursor: pointer; position: relative;
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    }
+    .history-item:hover { border-color: var(--accent); background: var(--panel); }
+    .history-item.pinned { border-left: 3px solid var(--accent); }
+    .history-item .item-title {
+      font-size: 13px; font-weight: 600; color: var(--text);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 45px;
+    }
+    .history-item .item-meta {
+      display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--muted);
+    }
+    .history-item .item-meta .count {
+      font-family: var(--font-mono); background: rgba(148, 163, 199, 0.08); padding: 1px 4px; border-radius: 4px;
+    }
+    .item-actions {
+      position: absolute; right: 10px; top: 10px; display: flex; gap: 6px; opacity: 0; transition: opacity 0.15s;
+    }
+    .history-item:hover .item-actions { opacity: 1; }
+    .item-action-btn {
+      background: none; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      width: 20px; height: 20px; border-radius: 4px; color: var(--muted); transition: color 0.15s, background 0.15s;
+    }
+    .item-action-btn:hover { color: var(--text); background: var(--line); }
+    .item-action-btn.del-btn:hover { color: var(--danger); }
+    
+    .history-empty {
+      padding: 30px 16px; text-align: center; color: var(--muted); font-size: 13px;
+    }
+
+    /* ---------- Main Panel ---------- */
+    .main-panel {
+      display: flex; flex-direction: column; gap: 20px;
+    }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 768px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex; flex-direction: column;
+    }
     .card-head {
-      padding: 14px 16px; border-bottom: 1px solid var(--line);
+      padding: 14px 18px; border-bottom: 1px solid var(--line);
       display: flex; justify-content: space-between; align-items: center; gap: 12px;
       background: var(--panel-2);
     }
-    .card-head strong { font-size: .95rem; }
-    .stats { color: var(--muted); font-size: .82rem; white-space: nowrap; }
+    .card-head strong { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+    .stats { color: var(--muted); font-size: 12px; font-family: var(--font-mono); }
+    
     textarea {
       width: 100%; min-height: 480px; resize: vertical; border: 0; outline: none;
       background: transparent; color: var(--text); padding: 18px;
-      font: 14px/1.55 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font: 14px/1.6 var(--font-mono); transition: background 0.15s;
     }
-    textarea::placeholder { color: var(--muted); }
+    textarea::placeholder { color: var(--dim); }
+    textarea[readonly] { background: rgba(0,0,0,0.06); }
+
+    /* ---------- Controls ---------- */
     .controls {
-      margin-top: 18px; padding: 16px; background: var(--panel); border: 1px solid var(--line);
-      border-radius: 18px; display: grid; gap: 14px; box-shadow: var(--shadow);
+      padding: 20px; background: var(--panel); border: 1px solid var(--line);
+      border-radius: var(--radius); display: grid; gap: 16px; box-shadow: var(--shadow);
     }
-    .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
     select, input[type="text"], button {
-      font: inherit;
+      font-size: 13px; font-family: inherit;
     }
     select, input[type="text"] {
       background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
-      border-radius: 10px; padding: 10px 12px;
+      border-radius: var(--radius-sm); padding: 10px 14px; outline: none; transition: border-color 0.15s;
     }
-    input[type="text"] { width: 110px; }
-    label { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); font-size: .92rem; }
+    select:focus, input[type="text"]:focus { border-color: var(--accent); }
+    input[type="text"] { width: 100px; }
+    label { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); font-size: 13px; cursor: pointer; user-select: none; }
+    label input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; }
+
     button {
       border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
-      padding: 10px 13px; border-radius: 10px; cursor: pointer;
+      padding: 10px 16px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 500;
+      transition: all 0.15s;
     }
-    button:hover { border-color: var(--accent); }
-    button.primary { background: var(--accent); color: #ffffff; border-color: transparent; font-weight: 700; }
+    button:hover { border-color: var(--line-strong); background: var(--panel); }
+    button.primary { background: var(--accent); color: #ffffff; border-color: transparent; font-weight: 600; }
+    button.primary:hover { background: var(--accent-hi); transform: translateY(-1px); }
     button.danger:hover { border-color: var(--danger); color: var(--danger); }
     button:disabled { opacity: .55; cursor: wait; }
-    .message { min-height: 1.3em; color: var(--good); font-size: .88rem; }
-    .privacy-note { color: var(--muted); font-size: .82rem; }
     
-    /* history styles */
-    .history-card { margin-top: 18px; }
-    .history-list {
-      display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto;
-      padding: 14px 16px;
-    }
-    .history-item {
-      display: flex; justify-content: space-between; align-items: center; gap: 12px;
-      padding: 8px 12px; background: var(--panel-2); border: 1px solid var(--line);
-      border-radius: 8px; cursor: pointer; transition: border-color .15s, background .15s;
-    }
-    .history-item:hover { border-color: var(--accent); background: var(--panel); }
-    .history-item .title-text {
-      font-size: .85rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis;
-      white-space: nowrap; flex: 1; color: var(--text);
-    }
-    .history-item .meta {
-      display: flex; align-items: center; gap: 8px; flex-shrink: 0;
-    }
-    .history-item .count {
-      background: var(--line); padding: 2px 6px; border-radius: 4px;
-      font-size: .75rem; color: var(--muted); font-family: ui-monospace, monospace;
-    }
-    .history-item .time { font-size: .75rem; color: var(--muted); }
-    .history-empty { padding: 14px 16px; text-align: center; color: var(--muted); font-size: .85rem; }
+    .message { min-height: 1.4em; color: var(--good); font-size: 13px; font-weight: 500; }
+    .privacy-note { color: var(--dim); font-size: 11.5px; }
 
     .help {
-      margin-top: 18px; color: var(--muted); font-size: .91rem; line-height: 1.55;
-      padding: 0 4px;
+      color: var(--muted); font-size: 13px; line-height: 1.6;
+      padding: 10px 4px; border-top: 1px solid var(--line); margin-top: 10px;
     }
-    code { color: var(--text); }
-    @media (max-width: 850px) {
-      .grid { grid-template-columns: 1fr; }
-      textarea { min-height: 320px; }
-      header { align-items: center; }
+    kbd {
+      font-family: var(--font-mono); font-size: 11px; color: var(--accent-hi);
+      background: rgba(109,94,240,0.1); border: 1px solid rgba(109,94,240,0.2);
+      padding: 1px 5px; border-radius: 4px;
     }
   </style>
 </head>
 <body>
   <main class="wrap">
+    <!-- Header -->
     <header>
-      <div>
-        <h1><a href="/" style="text-decoration:none; color:inherit;">Limn</a> / Safari Links → Clean Lists</h1>
-        <p class="sub">Paste Safari’s copied title-and-URL text. The converter pairs each title with the URL below it.</p>
+      <div class="brand">
+        <h1><a href="/">Limn</a> / <em>Safari cleaner</em></h1>
+        <span class="tag">tool</span>
       </div>
-      <div class="row">
+      <div class="header-ctrls">
         <button id="themeBtn" aria-label="Toggle theme">Light mode</button>
       </div>
     </header>
 
-    <section class="grid">
-      <article class="card">
-        <div class="card-head">
-          <strong>Safari text</strong>
-          <span class="stats" id="inputStats">0 lines</span>
+    <!-- Workspace Grid -->
+    <div class="workspace">
+      <!-- Sidebar (History) -->
+      <aside class="sidebar">
+        <div class="sidebar-head">
+          <div class="sidebar-title-row">
+            <h2>History</h2>
+            <button id="clearHistoryBtn" class="danger" style="padding: 4px 8px; font-size: 10px; border-radius: 4px;">Clear</button>
+          </div>
+          <div class="search-box">
+            <input type="text" id="historySearch" placeholder="Search history..." />
+          </div>
         </div>
-        <textarea id="input" spellcheck="false" placeholder="Private
+        <div id="historyList" class="history-list">
+          <div class="history-empty">No conversions yet.</div>
+        </div>
+      </aside>
 
-Page title
+      <!-- Main Converter Surface -->
+      <div class="main-panel">
+        <div class="grid">
+          <article class="card">
+            <div class="card-head">
+              <strong>Safari copied text</strong>
+              <span class="stats" id="inputStats">0 lines</span>
+            </div>
+            <textarea id="input" spellcheck="false" placeholder="Private
+
+Page Title
 https://example.com/
 
-Another page
+Another Title
 https://example.org/"></textarea>
-      </article>
+          </article>
 
-      <article class="card">
-        <div class="card-head">
-          <strong>Converted output</strong>
-          <span class="stats" id="outputStats">0 links</span>
+          <article class="card">
+            <div class="card-head">
+              <strong>Converted output</strong>
+              <span class="stats" id="outputStats">0 links</span>
+            </div>
+            <textarea id="output" spellcheck="false" readonly placeholder="Your clean lists appear here..."></textarea>
+          </article>
         </div>
-        <textarea id="output" spellcheck="false" readonly placeholder="Your converted list appears here."></textarea>
-      </article>
-    </section>
 
-    <section class="controls">
-      <div class="row">
-        <select id="format" aria-label="Output format">
-          <option value="rich-bullets">Rich linked bullets (Telegram/Notes)</option>
-          <option value="rich-numbers">Rich linked numbering (Telegram/Notes)</option>
-          <option value="md-bullets">Markdown bullets</option>
-          <option value="md-numbers">Markdown numbering</option>
-          <option value="plain-bullets">Plain bullets</option>
-          <option value="plain-numbers">Plain numbering</option>
-          <option value="html-ul">HTML unordered list</option>
-          <option value="html-ol">HTML ordered list</option>
-          <option value="json">JSON</option>
-          <option value="csv">CSV</option>
-          <option value="inline">Inline list</option>
-        </select>
+        <!-- Controls Card -->
+        <section class="controls">
+          <div class="row">
+            <select id="format" aria-label="Output format">
+              <option value="rich-bullets">Rich linked bullets (Telegram/Notes)</option>
+              <option value="rich-numbers">Rich linked numbering (Telegram/Notes)</option>
+              <option value="md-bullets">Markdown bullets</option>
+              <option value="md-numbers">Markdown numbering</option>
+              <option value="plain-bullets">Plain bullets</option>
+              <option value="plain-numbers">Plain numbering</option>
+              <option value="html-ul">HTML unordered list</option>
+              <option value="html-ol">HTML ordered list</option>
+              <option value="json">JSON</option>
+              <option value="csv">CSV</option>
+              <option value="inline">Inline list</option>
+            </select>
 
-        <label><input type="checkbox" id="dedupe" checked /> Remove duplicates</label>
-        <label><input type="checkbox" id="sort" /> Sort A–Z</label>
-        <label><input type="checkbox" id="stripTracking" checked /> Smart-clean URLs</label>
-        <label><input type="checkbox" id="ignoreSearches" /> Ignore Google searches</label>
-        <label title="Only used when direct browser fetching is blocked by CORS"><input type="checkbox" id="remoteTitles" /> Remote fallback for titles</label>
+            <label><input type="checkbox" id="dedupe" checked /> Remove duplicates</label>
+            <label><input type="checkbox" id="sort" /> Sort A–Z</label>
+            <label><input type="checkbox" id="stripTracking" checked /> Smart-clean URLs</label>
+            <label><input type="checkbox" id="ignoreSearches" /> Ignore Google searches</label>
+            <label title="Only used when direct browser fetching is blocked by CORS"><input type="checkbox" id="remoteTitles" /> Remote metadata fallback</label>
+          </div>
+
+          <div class="row">
+            <label>Bullet <input type="text" id="bullet" value="-" maxlength="3" /></label>
+            <label>Delimiter <input type="text" id="delimiter" value=" · " maxlength="20" /></label>
+            <button class="primary" id="convertBtn">Convert</button>
+            <button id="copyBtn">Copy plain text</button>
+            <button id="copyRichBtn">Copy rich links for Telegram</button>
+            <button id="fetchTitlesBtn">Fetch missing titles</button>
+            <button id="downloadBtn">Download</button>
+            <button id="exampleBtn">Load example</button>
+            <button class="danger" id="clearBtn">Clear</button>
+          </div>
+          <div class="message" id="message"></div>
+          <div class="privacy-note">Remote title fallback is opt-in. When active, unresolved URLs query Microlink; otherwise, conversion remains completely local.</div>
+        </section>
+
+        <!-- Help Info -->
+        <p class="help">
+          Converts raw Safari multi-line tab copies into clean, readable formats. Smart cleaning strips tracking parameters (e.g. <code>utm_*</code>, <code>gclid</code>, <code>fbclid</code>) from domains like YouTube, Spotify, Amazon, Reddit, and Twitter while keeping functional paths intact.
+          <br /><br />
+          Press <kbd>⌘/Ctrl</kbd> + <kbd>Enter</kbd> to convert. Pin history items by hovering and clicking the pin icon. Double-click any history item title to rename it.
+        </p>
       </div>
-
-      <div class="row">
-        <label>Bullet <input type="text" id="bullet" value="-" maxlength="3" /></label>
-        <label>Delimiter <input type="text" id="delimiter" value=" · " maxlength="20" /></label>
-        <button class="primary" id="convertBtn">Convert</button>
-        <button id="copyBtn">Copy plain text</button>
-        <button id="copyRichBtn">Copy rich links for Telegram</button>
-        <button id="fetchTitlesBtn">Fetch missing titles</button>
-        <button id="downloadBtn">Download</button>
-        <button id="exampleBtn">Load example</button>
-        <button class="danger" id="clearBtn">Clear</button>
-      </div>
-      <div class="message" id="message"></div>
-      <div class="privacy-note">Remote title fallback is opt-in. When enabled, unresolved URLs are sent to Microlink’s metadata endpoint; otherwise processing remains local.</div>
-    </section>
-
-    <!-- History Panel -->
-    <article class="card history-card">
-      <div class="card-head">
-        <strong>Conversion History</strong>
-        <button id="clearHistoryBtn" class="danger" style="padding: 4px 8px; font-size: 11px;">Clear history</button>
-      </div>
-      <div id="historyList" class="history-list">
-        <div class="history-empty">No conversion history yet. Converted lists will appear here.</div>
-      </div>
-    </article>
-
-    <p class="help">
-      It ignores standalone lines such as <code>Private</code> and understands Safari’s alternating title/URL export,
-      Markdown links, bare URLs, and single-line entries such as <code>- Title (https://example.com)</code>.
-      “Copy rich links for Telegram” copies a real DOM selection rather than a plain-text fallback, allowing Telegram, Apple Notes, Mail, and Pages to preserve clickable titles without exposing the full URL. Choose Rich linked bullets or Rich linked numbering first.
-      Press <code>⌘/Ctrl + Enter</code> to convert. Smart cleaning removes only recognized tracking parameters while preserving functional query values, paths, fragments, playlist context, search queries, and product identifiers.
-    </p>
+    </div>
   </main>
 
   <script>
@@ -370,7 +486,6 @@ https://example.org/"></textarea>
         const line = rawLine.trim();
         if (!line || /^private$/i.test(line)) continue;
 
-        // Markdown: - [Title](URL), [Title](URL), or numbered Markdown.
         const md = line.match(/^(?:[-*•]|\d+[.)])?\s*\[([^\]]+)\]\((https?:\/\/.+)\)\s*$/i);
         if (md) {
           links.push({ title: normalizeTitle(md[1]), url: cleanUrl(md[2]), titleSource: "provided" });
@@ -378,7 +493,6 @@ https://example.org/"></textarea>
           continue;
         }
 
-        // Safari/Telegram-style: - Title (URL), 1. Title (URL), or Title (URL).
         const parenthesized = line.match(/^(?:[-*•]|\d+[.)])?\s*(.*?)\s+\((https?:\/\/.+)\)\s*$/i);
         if (parenthesized) {
           links.push({
@@ -390,7 +504,6 @@ https://example.org/"></textarea>
           continue;
         }
 
-        // Plain bullet followed by bare URL on the same line.
         const inlineUrl = line.match(/^(?:[-*•]|\d+[.)])?\s*(.*?)\s+(https?:\/\/\S+)\s*$/i);
         if (inlineUrl && inlineUrl[1].trim()) {
           links.push({
@@ -508,69 +621,141 @@ https://example.org/"></textarea>
       }
     }
 
-    // --- History Logic ---
+    // --- Upgraded Sidebar History Features ---
+    let currentSearchQuery = "";
+
     function getHistory() {
       return JSON.parse(localStorage.getItem("safari-link-history") || "[]");
     }
 
     function saveToHistory(rawInput, count) {
       const history = getHistory();
+      
       // Avoid duplicate consecutive identical inputs
-      if (history.length > 0 && history[0].input === rawInput) return;
+      if (history.length > 0 && history[0].input.trim() === rawInput.trim()) return;
 
-      // Extract a tiny snippet of the first title for display
-      const snippet = rawInput.split('\n').map(l => l.trim()).filter(Boolean).slice(0, 2).join(' / ').substring(0, 48) + '...';
+      // Extract title snippet
+      const lines = rawInput.split('\n').map(l => l.trim()).filter(Boolean);
+      let snippet = "Link compilation";
+      if (lines.length > 0) {
+        snippet = lines[0].startsWith("http") ? lines[0] : lines[0];
+      }
+      snippet = snippet.substring(0, 36) + (snippet.length > 36 ? "..." : "");
+
       const entry = {
-        timestamp: new Date().toLocaleTimeString(),
+        id: Date.now() + Math.random().toString(36).substr(2, 5),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        date: new Date().toLocaleDateString([], { month: 'short', day: 'numeric' }),
         snippet,
         input: rawInput,
-        count
+        count,
+        pinned: false
       };
 
       history.unshift(entry);
-      // Limit to 15 items
-      if (history.length > 15) history.pop();
       localStorage.setItem("safari-link-history", JSON.stringify(history));
       renderHistory();
     }
 
-    function loadHistoryItem(index) {
+    function loadHistoryItem(id) {
       const history = getHistory();
-      const item = history[index];
+      const item = history.find(x => x.id === id);
       if (item) {
         input.value = item.input;
-        convert();
-        message.textContent = `Restored conversion from history (${item.count} links).`;
+        convert(null);
+        message.textContent = `Loaded conversion: "${item.snippet}" (${item.count} links).`;
+      }
+    }
+
+    function togglePinHistory(e, id) {
+      e.stopPropagation();
+      let history = getHistory();
+      const itemIdx = history.findIndex(x => x.id === id);
+      if (itemIdx !== -1) {
+        history[itemIdx].pinned = !history[itemIdx].pinned;
+        // Sort: pinned first
+        history.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+        localStorage.setItem("safari-link-history", JSON.stringify(history));
+        renderHistory();
+      }
+    }
+
+    function deleteHistoryItem(e, id) {
+      e.stopPropagation();
+      let history = getHistory();
+      history = history.filter(x => x.id !== id);
+      localStorage.setItem("safari-link-history", JSON.stringify(history));
+      renderHistory();
+      message.textContent = "Deleted history item.";
+    }
+
+    function renameHistoryItem(id) {
+      const history = getHistory();
+      const item = history.find(x => x.id === id);
+      if (!item) return;
+      const newName = prompt("Rename history entry:", item.snippet);
+      if (newName && newName.trim()) {
+        item.snippet = newName.trim();
+        localStorage.setItem("safari-link-history", JSON.stringify(history));
+        renderHistory();
       }
     }
 
     function renderHistory() {
       const list = $("historyList");
-      const history = getHistory();
+      let history = getHistory();
+
+      if (currentSearchQuery) {
+        const query = currentSearchQuery.toLowerCase();
+        history = history.filter(item => 
+          item.snippet.toLowerCase().includes(query) || 
+          item.input.toLowerCase().includes(query)
+        );
+      }
+
       if (history.length === 0) {
-        list.innerHTML = `<div class="history-empty">No conversion history yet. Converted lists will appear here.</div>`;
+        list.innerHTML = `<div class="history-empty">${currentSearchQuery ? "No search matches." : "No history yet."}</div>`;
         return;
       }
 
-      list.innerHTML = history.map((item, idx) => `
-        <div class="history-item" onclick="loadHistoryItem(${idx})">
-          <span class="title-text">${escHtml(item.snippet)}</span>
-          <div class="meta">
-            <span class="count">${item.count} links</span>
-            <span class="time">${item.timestamp}</span>
+      list.innerHTML = history.map((item) => {
+        const pinIcon = item.pinned ? "★" : "☆";
+        const pinTitle = item.pinned ? "Unpin entry" : "Pin entry";
+        return `
+          <div class="history-item ${item.pinned ? 'pinned' : ''}" onclick="loadHistoryItem('${item.id}')" ondblclick="renameHistoryItem('${item.id}')" title="Double click to rename">
+            <span class="item-title">${escHtml(item.snippet)}</span>
+            <div class="item-meta">
+              <span class="count">${item.count} links</span>
+              <span>${item.date} · ${item.timestamp}</span>
+            </div>
+            <div class="item-actions">
+              <button class="item-action-btn" onclick="togglePinHistory(event, '${item.id}')" title="${pinTitle}">${pinIcon}</button>
+              <button class="item-action-btn del-btn" onclick="deleteHistoryItem(event, '${item.id}')" title="Delete entry">✕</button>
+            </div>
           </div>
-        </div>
-      `).join("");
+        `;
+      }).join("");
     }
 
     $("clearHistoryBtn").addEventListener("click", () => {
-      localStorage.removeItem("safari-link-history");
-      renderHistory();
-      message.textContent = "History cleared.";
+      if (confirm("Clear all conversion history?")) {
+        localStorage.removeItem("safari-link-history");
+        renderHistory();
+        message.textContent = "History cleared.";
+      }
     });
 
-    window.loadHistoryItem = loadHistoryItem; // Bind to window for HTML onclick
+    $("historySearch").addEventListener("input", (e) => {
+      currentSearchQuery = e.target.value;
+      renderHistory();
+    });
 
+    window.loadHistoryItem = loadHistoryItem;
+    window.togglePinHistory = togglePinHistory;
+    window.deleteHistoryItem = deleteHistoryItem;
+    window.renameHistoryItem = renameHistoryItem;
+
+    // --- Rest of Operations ---
     async function copyPlainOutput() {
       if (!output.value) return;
       try {
