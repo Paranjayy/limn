@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Capsule Playground & Simulator · Limn</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07090f;
+      --panel: #10141f;
+      --panel-2: #0c1018;
+      --text: #e7ecf6;
+      --muted: #93a0ba;
+      --dim: #55617c;
+      --line: rgba(148, 163, 199, 0.10);
+      --line-strong: rgba(148, 163, 199, 0.18);
+      --accent: #6d5ef0;
+      --accent-hi: #8f83ff;
+      --good: #3ee0c8;
+      --danger: #ff6b6b;
+      --shadow: 0 12px 36px rgba(0,0,0,.35);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      background-image:
+        radial-gradient(1100px 600px at 85% -10%, rgba(109,94,240,0.06), transparent 60%),
+        radial-gradient(900px 500px at -10% 30%, rgba(62,224,200,0.03), transparent 60%);
+    }
+    header {
+      display: flex; justify-content: space-between; align-items: center; gap: 20px;
+      margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: baseline; gap: 10px; }
+    .brand h1 { font-size: 1.55rem; font-weight: 600; letter-spacing: -0.02em; }
+    .brand h1 em { font-style: normal; color: var(--accent-hi); }
+    .brand .tag {
+      font-size: 11px; background: rgba(109,94,240,0.12); color: var(--accent-hi);
+      padding: 2px 8px; border-radius: 99px; border: 1px solid rgba(109,94,240,0.2);
+    }
+    .header-ctrls { display: flex; align-items: center; gap: 10px; }
+
+    .wrap { max-width: 1440px; margin: 0 auto; padding: 22px 22px 48px; }
+
+    /* ---------- Playground Grid ---------- */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      height: calc(100vh - 120px);
+      align-items: start;
+    }
+    @media (max-width: 1024px) {
+      .grid { grid-template-columns: 1fr; height: auto; }
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+    .card-head {
+      padding: 12px 18px; border-bottom: 1px solid var(--line);
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      background: var(--panel-2);
+    }
+    .card-head strong { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+    .file-tabs { display: flex; gap: 6px; }
+    .file-tab {
+      padding: 6px 12px; font-size: 12px; border-radius: 4px; border: 1px solid transparent;
+      background: none; color: var(--muted); cursor: pointer; transition: all 0.15s;
+    }
+    .file-tab.active { background: var(--panel); color: var(--text); border-color: var(--line); }
+
+    /* ---------- Editor ---------- */
+    .editor-wrap { flex: 1; position: relative; }
+    textarea {
+      width: 100%; height: 100%; min-height: 520px; resize: none; border: 0; outline: none;
+      background: transparent; color: var(--text); padding: 18px;
+      font: 13px/1.6 var(--font-mono);
+    }
+
+    /* ---------- Simulator / Preview ---------- */
+    .preview-wrap { flex: 1; display: flex; flex-direction: column; height: 100%; background: #000; }
+    .address-bar {
+      background: var(--panel-2); border-bottom: 1px solid var(--line);
+      padding: 8px 14px; display: flex; align-items: center; gap: 10px;
+    }
+    .address-input {
+      flex: 1; background: var(--panel); border: 1px solid var(--line);
+      border-radius: 6px; padding: 6px 12px; font-size: 12px; font-family: var(--font-mono);
+      color: var(--muted); display: flex; align-items: center; gap: 6px;
+    }
+    .address-input span { color: var(--good); }
+    
+    .sim-viewport {
+      flex: 1; background: #ffffff; border: none; min-height: 380px;
+    }
+    .console-drawer {
+      height: 140px; background: #05070c; border-top: 1px solid var(--line-strong);
+      padding: 10px 14px; overflow-y: auto; font-family: var(--font-mono); font-size: 11.5px;
+      color: #a3b8cc; line-height: 1.6;
+    }
+    .console-line { border-bottom: 1px dashed rgba(255,255,255,0.03); padding: 2px 0; }
+    .console-line span { color: var(--dim); }
+    .console-line.info { color: var(--accent-hi); }
+    .console-line.success { color: var(--good); }
+    .console-line.error { color: var(--danger); }
+
+    button {
+      border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+      padding: 8px 14px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 500;
+      transition: all 0.15s;
+    }
+    button:hover { border-color: var(--line-strong); background: var(--panel); }
+    button.primary { background: var(--accent); color: #ffffff; border-color: transparent; font-weight: 600; }
+    button.primary:hover { background: var(--accent-hi); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <h1>Limn / <em>Capsule Simulator</em></h1>
+        <span class="tag">playground</span>
+      </div>
+      <div class="header-ctrls">
+        <label style="font-size:12px; color:var(--muted); margin-right:6px;">Select Template: 
+          <select id="templateSel" style="background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:4px; padding:4px 8px;">
+            <option value="guestbook">Guestbook app (SQLite)</option>
+            <option value="todo">Simple Tasks List</option>
+            <option value="joke">Interactive Joke Generator</option>
+          </select>
+        </label>
+        <button class="primary" id="runBtn">Deploy & Simulate</button>
+        <button onclick="location.href='/'">Back</button>
+      </div>
+    </header>
+
+    <!-- Workspace -->
+    <div class="grid">
+      <!-- Editor Card -->
+      <article class="card">
+        <div class="card-head">
+          <div class="file-tabs" id="fileTabs">
+            <button class="file-tab active" data-file="server">server/index.ts</button>
+            <button class="file-tab" data-file="client">client/index.tsx</button>
+            <button class="file-tab" data-file="schema">shared/schema.ts</button>
+          </div>
+          <strong id="fileName">server/index.ts</strong>
+        </div>
+        <div class="editor-wrap">
+          <textarea id="editor" spellcheck="false"></textarea>
+        </div>
+      </article>
+
+      <!-- Simulator Card -->
+      <article class="card">
+        <div class="card-head">
+          <strong>Interactive Simulator Viewport</strong>
+          <span style="font-size:11px; color:var(--good); display:flex; align-items:center; gap:6px;">
+            <span style="width:7px; height:7px; border-radius:50%; background:var(--good);"></span> Simulator Active
+          </span>
+        </div>
+        <div class="preview-wrap">
+          <div class="address-bar">
+            <div class="address-input">
+              <span>https://</span><b id="simHost">clear-signal-2e7d5a</b>.limn.app/
+            </div>
+            <button id="refreshBtn" style="padding:4px 8px; font-size:11px; border-radius:4px;">Refresh</button>
+          </div>
+          
+          <!-- Mock Simulator Iframe -->
+          <iframe class="sim-viewport" id="simViewport" src="about:blank"></iframe>
+          
+          <!-- Diagnostics Terminal -->
+          <div class="console-drawer" id="consoleDrawer">
+            <div class="console-line info"><span>[SYSTEM]</span> Capsule sandbox initialized. Select a template and click "Deploy & Simulate".</div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const editor = $("editor");
+
+    const TEMPLATES = {
+      guestbook: {
+        server: `// server/index.ts - SQLite powered Capsule Guestbook
+import { db, router } from "lakebed/runtime";
+
+export default router({
+  async getEntries() {
+    return db.query("SELECT * FROM guestbook ORDER BY id DESC");
+  },
+  async sign(name: string, message: string) {
+    if (!name || !message) throw new Error("Missing values");
+    await db.execute(
+      "INSERT INTO guestbook (name, message, date) VALUES (?, ?, ?)",
+      [name, message, new Date().toLocaleTimeString()]
+    );
+    return { success: true };
+  }
+});`,
+        client: `// client/index.tsx - Guestbook Preact frontend
+import { h, render } from "preact";
+import { useState, useEffect } from "preact/hooks";
+import { api } from "lakebed/client";
+
+function App() {
+  const [entries, setEntries] = useState([]);
+  const [name, setName] = useState("");
+  const [msg, setMsg] = useState("");
+
+  const refresh = () => api.getEntries().then(setEntries);
+  useEffect(() => { refresh(); }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await api.sign(name, msg);
+    setMsg("");
+    refresh();
+  };
+
+  return (
+    <div style="font-family:sans-serif; padding:24px; max-width:480px; margin:0 auto; color:#333;">
+      <h2 style="color:#6d5ef0;">Capsule Guestbook</h2>
+      <form onSubmit={handleSubmit} style="display:flex; flex-direction:column; gap:8px; margin-bottom:18px;">
+        <input placeholder="Name" value={name} onChange={e => setName(e.target.value)} required style="padding:8px; border:1px solid #ccc; border-radius:4px;" />
+        <input placeholder="Say something..." value={msg} onChange={e => setMsg(e.target.value)} required style="padding:8px; border:1px solid #ccc; border-radius:4px;" />
+        <button type="submit" style="padding:10px; background:#6d5ef0; color:white; border:0; border-radius:4px; font-weight:600;">Sign Guestbook</button>
+      </form>
+      <h3>Signs ({entries.length})</h3>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        {entries.map(e => (
+          <div key={e.id} style="padding:10px; background:#f5f6f9; border-radius:4px;">
+            <b>{e.name}</b>: {e.message} <small style="color:#777; float:right;">{e.date}</small>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}`,
+        schema: `// shared/schema.ts - Shared interface contracts
+export interface Entry {
+  id: number;
+  name: string;
+  message: string;
+  date: string;
+}`
+      },
+      todo: {
+        server: `// server/index.ts - Simple Todo Backend
+import { db, router } from "lakebed/runtime";
+
+export default router({
+  async getTodos() {
+    return db.query("SELECT * FROM todos");
+  },
+  async add(text: string) {
+    await db.execute("INSERT INTO todos (text, done) VALUES (?, 0)", [text]);
+    return { success: true };
+  },
+  async toggle(id: number) {
+    await db.execute("UPDATE todos SET done = NOT done WHERE id = ?", [id]);
+  }
+});`,
+        client: `// client/index.tsx - Todo Preact UI
+import { h, render } from "preact";
+import { useState, useEffect } from "preact/hooks";
+import { api } from "lakebed/client";
+
+function App() {
+  const [todos, setTodos] = useState([]);
+  const [text, setText] = useState("");
+
+  const refresh = () => api.getTodos().then(setTodos);
+  useEffect(() => { refresh(); }, []);
+
+  const handleAdd = async (e) => {
+    e.preventDefault();
+    await api.add(text);
+    setText(""); refresh();
+  };
+
+  const handleToggle = async (id) => {
+    await api.toggle(id);
+    refresh();
+  };
+
+  return (
+    <div style="font-family:sans-serif; padding:24px; max-width:400px; margin:0 auto; color:#222;">
+      <h2 style="color:#3ee0c8; text-shadow:0 1px 2px rgba(0,0,0,0.1);">Capsule Tasklist</h2>
+      <form onSubmit={handleAdd} style="display:flex; gap:8px; margin-bottom:14px;">
+        <input value={text} onChange={e => setText(e.target.value)} required style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;" />
+        <button type="submit" style="padding:8px 14px; background:#222; color:white; border:0; border-radius:4px;">Add</button>
+      </form>
+      <div>
+        {todos.map(t => (
+          <div key={t.id} onClick={() => handleToggle(t.id)} style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; text-decoration: {t.done ? 'line-through' : 'none'}">
+            <input type="checkbox" checked={t.done} style="margin-right:8px;" /> {t.text}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}`,
+        schema: `// shared/schema.ts - Contract Interfaces
+export interface Todo {
+  id: number;
+  text: string;
+  done: boolean;
+}`
+      },
+      joke: {
+        server: `// server/index.ts - Random Jokes API
+import { router } from "lakebed/runtime";
+
+const JOKES = [
+  "Why do programmers wear glasses? Because they need to C#.",
+  "There are 10 types of people: those who understand binary, and those who don't.",
+  "How many programmers does it take to change a light bulb? None, it's a hardware problem."
+];
+
+export default router({
+  async getRandomJoke() {
+    return JOKES[Math.floor(Math.random() * JOKES.length)];
+  }
+});`,
+        client: `// client/index.tsx - Joke Display UI
+import { h, render } from "preact";
+import { useState } from "preact/hooks";
+import { api } from "lakebed/client";
+
+function App() {
+  const [joke, setJoke] = useState("Click the button to fetch a joke!");
+
+  const fetchJoke = () => api.getRandomJoke().then(setJoke);
+
+  return (
+    <div style="font-family:sans-serif; text-align:center; padding:40px 20px; max-width:400px; margin:0 auto; color:#333;">
+      <h2 style="color:#ff6b6b;">Programmer Jokes</h2>
+      <div style="min-height:80px; padding:20px; background:#fff2f2; border-radius:8px; margin:20px 0; font-style:italic;">
+        "{joke}"
+      </div>
+      <button onClick={fetchJoke} style="padding:10px 20px; background:#ff6b6b; color:white; border:0; border-radius:4px; font-weight:600; cursor:pointer;">Fetch Joke</button>
+    </div>
+  );
+}`,
+        schema: `// shared/schema.ts - Shared Contract
+// Empty (pure API mapping)`
+      }
+    };
+
+    let activeFile = "server";
+    let activeTemplate = "guestbook";
+
+    function loadTemplate(name) {
+      activeTemplate = name;
+      editor.value = TEMPLATES[name][activeFile];
+      log(`Template "${name}" loaded. Code synced.`, "info");
+    }
+
+    function selectFile(file) {
+      // save current editor value to activeTemplate state
+      TEMPLATES[activeTemplate][activeFile] = editor.value;
+      
+      activeFile = file;
+      $("fileName").textContent = file === "server" ? "server/index.ts" : file === "client" ? "client/index.tsx" : "shared/schema.ts";
+      editor.value = TEMPLATES[activeTemplate][file];
+
+      [...$("fileTabs").querySelectorAll(".file-tab")].forEach(b => {
+        b.classList.toggle("active", b.dataset.file === file);
+      });
+    }
+
+    function log(msg, type = "") {
+      const drawer = $("consoleDrawer");
+      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      drawer.innerHTML += `<div class="console-line ${type}"><span>[${time}]</span> ${msg}</div>`;
+      drawer.scrollTop = drawer.scrollHeight;
+    }
+
+    // Compile simulator code
+    function compileAndRun() {
+      // Save current code edit
+      TEMPLATES[activeTemplate][activeFile] = editor.value;
+
+      log("Initiating capsule build...", "info");
+      
+      // Generate random capsule hostname
+      const host = "cap-" + Math.random().toString(36).substr(2, 6);
+      $("simHost").textContent = host;
+
+      setTimeout(() => {
+        log("Bundling client/index.tsx using mock build target (esbuild / Preact)...", "info");
+      }, 300);
+
+      setTimeout(() => {
+        log("Validating server/index.ts routes...", "info");
+      }, 600);
+
+      setTimeout(() => {
+        log("Capsule successfully claimed. Deploying server container to Railway...", "success");
+      }, 900);
+
+      setTimeout(() => {
+        log(`Deploy complete! Capsule online at https://${host}.limn.app`, "success");
+        runSimulatorInstance(host);
+      }, 1200);
+    }
+
+    // Create iframe runner representing the Preact client code
+    function runSimulatorInstance(hostName) {
+      const iframe = $("simViewport");
+      const clientCode = TEMPLATES[activeTemplate]["client"];
+      
+      // Re-compile Preact JSX to basic HTML mock representation in the iframe
+      let html = "";
+      if (activeTemplate === "guestbook") {
+        html = `
+          <html>
+            <body style="margin:0; background:#f4f6f8;">
+              <div style="font-family:sans-serif; padding:24px; max-width:480px; margin:0 auto; color:#333; background:white; min-height:100vh; box-shadow:0 0 10px rgba(0,0,0,0.05);">
+                <h2 style="color:#6d5ef0; margin-bottom:8px;">Capsule Guestbook</h2>
+                <div style="font-size:11px; color:#777; margin-bottom:18px;">Host: ${hostName}.limn.app</div>
+                <form id="signForm" style="display:flex; flex-direction:column; gap:8px; margin-bottom:18px;">
+                  <input id="nameInput" placeholder="Name" required style="padding:10px; border:1px solid #ccc; border-radius:4px;" />
+                  <input id="msgInput" placeholder="Say something..." required style="padding:10px; border:1px solid #ccc; border-radius:4px;" />
+                  <button type="submit" style="padding:10px; background:#6d5ef0; color:white; border:0; border-radius:4px; font-weight:600; cursor:pointer;">Sign Guestbook</button>
+                </form>
+                <h3>Signs (<span id="count">2</span>)</h3>
+                <div id="signsList" style="display:flex; flex-direction:column; gap:8px;">
+                  <div style="padding:10px; background:#f5f6f9; border-radius:4px;">
+                    <b>Paranjay</b>: kewl mun! onwards and upwards <small style="color:#777; float:right;">12:04 PM</small>
+                  </div>
+                  <div style="padding:10px; background:#f5f6f9; border-radius:4px;">
+                    <b>Theo</b>: lakebed capsule runner works <small style="color:#777; float:right;">11:42 AM</small>
+                  </div>
+                </div>
+              </div>
+              <script>
+                document.getElementById('signForm').addEventListener('submit', (e) => {
+                  e.preventDefault();
+                  const name = document.getElementById('nameInput').value;
+                  const msg = document.getElementById('msgInput').value;
+                  
+                  // Add line to mock DB
+                  const list = document.getElementById('signsList');
+                  const div = document.createElement('div');
+                  div.style.padding = '10px';
+                  div.style.background = '#f5f6f9';
+                  div.style.borderRadius = '4px';
+                  div.innerHTML = '<b>' + name + '</b>: ' + msg + ' <small style="color:#777; float:right;">Just Now</small>';
+                  list.insertBefore(div, list.firstChild);
+                  
+                  document.getElementById('msgInput').value = '';
+                  document.getElementById('count').textContent = parseInt(document.getElementById('count').textContent) + 1;
+                  
+                  // Post log to parent console
+                  window.parent.postMessage({ type: 'log', text: 'Mutation: sign("' + name + '", "' + msg + '") -> db.execute successfully' }, '*');
+                });
+              <\/script>
+            </body>
+          </html>
+        `;
+      } else if (activeTemplate === "todo") {
+        html = `
+          <html>
+            <body style="margin:0; background:#f4f6f8;">
+              <div style="font-family:sans-serif; padding:24px; max-width:400px; margin:0 auto; color:#222; background:white; min-height:100vh; box-shadow:0 0 10px rgba(0,0,0,0.05);">
+                <h2 style="color:#3ee0c8; text-shadow:0 1px 2px rgba(0,0,0,0.05); margin-bottom:8px;">Capsule Tasklist</h2>
+                <div style="font-size:11px; color:#777; margin-bottom:14px;">Host: ${hostName}.limn.app</div>
+                <form id="todoForm" style="display:flex; gap:8px; margin-bottom:14px;">
+                  <input id="textInput" placeholder="Add task" required style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;" />
+                  <button type="submit" style="padding:8px 14px; background:#222; color:white; border:0; border-radius:4px; cursor:pointer;">Add</button>
+                </form>
+                <div id="todosList">
+                  <div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer;"><input type="checkbox" style="margin-right:8px;" /> Complete design Operating System</div>
+                  <div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer;"><input type="checkbox" style="margin-right:8px;" /> Build harmonium studio visualizer</div>
+                </div>
+              </div>
+              <script>
+                document.getElementById('todoForm').addEventListener('submit', (e) => {
+                  e.preventDefault();
+                  const txt = document.getElementById('textInput').value;
+                  const list = document.getElementById('todosList');
+                  const div = document.createElement('div');
+                  div.style.padding = '10px';
+                  div.style.borderBottom = '1px solid #eee';
+                  div.style.cursor = 'pointer';
+                  div.innerHTML = '<input type="checkbox" style="margin-right:8px;" /> ' + txt;
+                  list.appendChild(div);
+                  document.getElementById('textInput').value = '';
+                  window.parent.postMessage({ type: 'log', text: 'Mutation: add("' + txt + '") -> db.execute successfully' }, '*');
+                });
+              <\/script>
+            </body>
+          </html>
+        `;
+      } else {
+        html = `
+          <html>
+            <body style="margin:0; background:#f4f6f8; font-family:sans-serif; text-align:center;">
+              <div style="padding:40px 20px; max-width:400px; margin:0 auto; background:white; min-height:100vh; box-shadow:0 0 10px rgba(0,0,0,0.05);">
+                <h2 style="color:#ff6b6b; margin-bottom:8px;">Programmer Jokes</h2>
+                <div style="font-size:11px; color:#777; margin-bottom:20px;">Host: ${hostName}.limn.app</div>
+                <div id="jokeDiv" style="min-height:80px; padding:20px; background:#fff2f2; border-radius:8px; margin:20px 0; font-style:italic;">
+                  "Why do programmers wear glasses? Because they need to C#."
+                </div>
+                <button id="jokeBtn" style="padding:10px 20px; background:#ff6b6b; color:white; border:0; border-radius:4px; font-weight:600; cursor:pointer;">Fetch Joke</button>
+              </div>
+              <script>
+                const jokes = [
+                  "There are 10 types of people: those who understand binary, and those who don't.",
+                  "How many programmers does it take to change a light bulb? None, it's a hardware problem."
+                ];
+                let idx = 0;
+                document.getElementById('jokeBtn').addEventListener('click', () => {
+                  const joke = jokes[idx];
+                  document.getElementById('jokeDiv').textContent = '"' + joke + '"';
+                  idx = (idx + 1) % jokes.length;
+                  window.parent.postMessage({ type: 'log', text: 'Query: getRandomJoke() -> returns mock string' }, '*');
+                });
+              <\/script>
+            </body>
+          </html>
+        `;
+      }
+      
+      const doc = iframe.contentDocument || iframe.contentWindow.document;
+      doc.open();
+      doc.write(html);
+      doc.close();
+    }
+
+    // Handle messages back from simulated iframe
+    window.addEventListener("message", (e) => {
+      if (e.data && e.data.type === "log") {
+        log(`[CAPSULE DB/API] ${e.data.text}`, "success");
+      }
+    });
+
+    // Listeners
+    $("fileTabs").addEventListener("click", (e) => {
+      if (e.target.classList.contains("file-tab")) {
+        selectFile(e.target.dataset.file);
+      }
+    });
+
+    $("templateSel").addEventListener("change", (e) => {
+      loadTemplate(e.target.value);
+    });
+
+    $("runBtn").addEventListener("click", compileAndRun);
+    $("refreshBtn").addEventListener("click", () => {
+      const host = $("simHost").textContent;
+      if (host !== "clear-signal-2e7d5a") {
+        log("Refreshing iframe container...", "info");
+        runSimulatorInstance(host);
+      }
+    });
+
+    // Init
+    loadTemplate("guestbook");
+  </script>
+</body>
+</html>
