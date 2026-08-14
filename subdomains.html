@@ -61,7 +61,7 @@
       gap: 20px;
     }
 
-    /* ---------- Sandbox Tools ---------- */
+    /* ---------- Cards ---------- */
     .card {
       background: var(--panel);
       border: 1px solid var(--line);
@@ -154,6 +154,15 @@
     .meta-tag {
       font-size: 11px; color: var(--muted);
     }
+
+    /* ---------- Router Diagram ---------- */
+    .router-node {
+      padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm);
+      background: var(--panel-2); text-align: center; min-width: 160px;
+    }
+    .router-arrow {
+      color: var(--accent-hi); font-weight: 700; font-family: var(--font-mono); font-size: 16px;
+    }
   </style>
 </head>
 <body>
@@ -168,6 +177,37 @@
     </header>
 
     <div class="dashboard">
+      <!-- Wildcard Router Map -->
+      <article class="card">
+        <div class="card-head">
+          <strong>Wildcard Routing Architecture Diagram</strong>
+        </div>
+        <div class="card-body" style="background:#05070c; padding:24px;">
+          <div class="router-flow" style="display:flex; justify-content:space-around; align-items:center; flex-wrap:wrap; gap:16px;">
+            <div class="router-node" style="border-color:var(--accent);">
+              <div style="font-size:10px; color:var(--muted);">DNS QUERY</div>
+              <div style="font-family:var(--font-mono); font-size:11px; font-weight:600;">*.lakebed.app</div>
+            </div>
+            <div class="router-arrow">→</div>
+            <div class="router-node" style="border-color:var(--good);">
+              <div style="font-size:10px; color:var(--muted);">INGRESS RESOLVER</div>
+              <div style="font-family:var(--font-mono); font-size:11px; font-weight:600;">Railway Wildcard</div>
+              <div style="font-size:9.5px; color:var(--dim); font-family:var(--font-mono);">69.46.46.101</div>
+            </div>
+            <div class="router-arrow">→</div>
+            <div class="router-node" style="border-color:var(--accent-hi);">
+              <div style="font-size:10px; color:var(--muted);">HTTP ROUTER</div>
+              <div style="font-family:var(--font-mono); font-size:11px; font-weight:600;">Host Header matching</div>
+            </div>
+            <div class="router-arrow">→</div>
+            <div class="router-node" style="border-color:var(--line-strong); border-style:dashed;">
+              <div style="font-size:10px; color:var(--muted);">TARGET RUNTIME</div>
+              <div style="font-family:var(--font-mono); font-size:11px; font-weight:600; color:var(--good);">Preact Capsule Server</div>
+            </div>
+          </div>
+        </div>
+      </article>
+
       <!-- DNS Sandbox Tool -->
       <article class="card">
         <div class="card-head">
@@ -191,7 +231,7 @@
       <article class="card">
         <div class="card-head">
           <strong>Subdomain Matrix & Live Probes</strong>
-          <button id="probeAllBtn" class="primary" style="padding: 4px 10px; font-size: 11px;">Probe All Live</button>
+          <button id="probeAllBtn" class="primary" style="padding: 4px 10px; font-size: 11px;">Re-Probe All Live</button>
         </div>
         <div class="card-body" style="padding: 0;">
           <div class="filter-bar" style="padding: 14px 18px; border-bottom: 1px solid var(--line);">
@@ -295,22 +335,42 @@
 
     async function probeSubdomain(host, rowEl) {
       const statusDot = rowEl.querySelector(".status-dot");
+      const statusLabel = rowEl.querySelector(".status-label");
       const ipEl = rowEl.querySelector(".dns-ip");
       const providerEl = rowEl.querySelector(".dns-provider");
 
       statusDot.className = "status-dot checking";
+      statusLabel.textContent = "Checking...";
 
       const answers = await dnsLookup(host);
       
       if (answers && answers.length > 0) {
         statusDot.className = "status-dot active";
+        statusLabel.textContent = "Online";
         const ips = answers.map(a => a.data).join(", ");
         ipEl.textContent = ips;
         providerEl.innerHTML = `<span class="dns-type">${answers[0].type === 5 ? 'CNAME' : 'A'}</span> ` + getProviderInfo(answers.map(a => a.data), host);
       } else {
         statusDot.className = "status-dot dead";
+        statusLabel.textContent = "Offline / Idle";
         ipEl.textContent = "—";
         providerEl.textContent = "Unresolved DNS";
+      }
+    }
+
+    async function probeAllSubdomains() {
+      const rows = [...$("subdomainTable").querySelectorAll("tbody tr")];
+      // Concurrency limit of 4 to avoid getting blocked
+      const chunks = [];
+      for (let i = 0; i < rows.length; i += 4) {
+        chunks.push(rows.slice(i, i + 4));
+      }
+
+      for (const chunk of chunks) {
+        await Promise.all(chunk.map(row => {
+          const host = row.dataset.host;
+          return probeSubdomain(host, row);
+        }));
       }
     }
 
@@ -337,17 +397,13 @@
         e.target.classList.add("active");
         currentFilter = e.target.dataset.filter;
         renderTable();
+        // re-probe active table set
+        probeAllSubdomains();
       }
     });
 
     // Probe Actions
-    $("probeAllBtn").addEventListener("click", async () => {
-      const rows = [...$("subdomainTable").querySelectorAll("tbody tr")];
-      for (const row of rows) {
-        const host = row.dataset.host;
-        await probeSubdomain(host, row);
-      }
-    });
+    $("probeAllBtn").addEventListener("click", probeAllSubdomains);
 
     // Sandbox analysis
     $("analyzeBtn").addEventListener("click", async () => {
@@ -385,6 +441,8 @@
 
     // Init
     renderTable();
+    // Auto-probe on load
+    setTimeout(probeAllSubdomains, 500);
   </script>
 </body>
 </html>
