@@ -85,13 +85,32 @@
     }
     .file-tab.active { background: var(--panel); color: var(--text); border-color: var(--line); }
 
-    /* ---------- Editor ---------- */
-    .editor-wrap { flex: 1; position: relative; }
+    /* ---------- Editor / Specs Container ---------- */
+    .editor-wrap { flex: 1; position: relative; height: 100%; min-height: 520px; }
     textarea {
       width: 100%; height: 100%; min-height: 520px; resize: none; border: 0; outline: none;
       background: transparent; color: var(--text); padding: 18px;
       font: 13px/1.6 var(--font-mono);
     }
+    .specs-container {
+      display: none; padding: 20px; flex-direction: column; gap: 16px; overflow-y: auto; height: 100%;
+    }
+    .spec-endpoint-card {
+      background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius-sm);
+      padding: 14px; display: flex; flex-direction: column; gap: 10px;
+    }
+    .spec-endpoint-card h3 { font-size: 13px; font-family: var(--font-mono); color: var(--accent-hi); }
+    .spec-endpoint-card .method {
+      font-size: 10px; font-weight: 700; background: rgba(62,224,200,0.1); color: var(--good);
+      padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(62,224,200,0.2);
+    }
+    .spec-endpoint-card .inputs { display: flex; flex-direction: column; gap: 6px; }
+    .spec-endpoint-card label { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--muted); }
+    .spec-endpoint-card input {
+      background: var(--panel); color: var(--text); border: 1px solid var(--line);
+      border-radius: 4px; padding: 6px 10px; width: 180px; outline: none;
+    }
+    .spec-endpoint-card input:focus { border-color: var(--accent); }
 
     /* ---------- Simulator / Preview ---------- */
     .preview-wrap { flex: 1; display: flex; flex-direction: column; height: 100%; background: #000; }
@@ -160,11 +179,13 @@
             <button class="file-tab active" data-file="server">server/index.ts</button>
             <button class="file-tab" data-file="client">client/index.tsx</button>
             <button class="file-tab" data-file="schema">shared/schema.ts</button>
+            <button class="file-tab" data-file="specs" style="color:var(--good);">API Specs</button>
           </div>
           <strong id="fileName">server/index.ts</strong>
         </div>
         <div class="editor-wrap">
           <textarea id="editor" spellcheck="false"></textarea>
+          <div class="specs-container" id="specsContainer"></div>
         </div>
       </article>
 
@@ -199,6 +220,7 @@
   <script>
     const $ = id => document.getElementById(id);
     const editor = $("editor");
+    const specsContainer = $("specsContainer");
 
     const TEMPLATES = {
       guestbook: {
@@ -373,22 +395,105 @@ function App() {
 
     function loadTemplate(name) {
       activeTemplate = name;
-      editor.value = TEMPLATES[name][activeFile];
+      if (activeFile === "specs") {
+        renderSpecs();
+      } else {
+        editor.value = TEMPLATES[name][activeFile];
+      }
       log(`Template "${name}" loaded. Code synced.`, "info");
     }
 
     function selectFile(file) {
-      // save current editor value to activeTemplate state
-      TEMPLATES[activeTemplate][activeFile] = editor.value;
+      if (activeFile !== "specs") {
+        TEMPLATES[activeTemplate][activeFile] = editor.value;
+      }
       
       activeFile = file;
-      $("fileName").textContent = file === "server" ? "server/index.ts" : file === "client" ? "client/index.tsx" : "shared/schema.ts";
-      editor.value = TEMPLATES[activeTemplate][file];
+      $("fileName").textContent = file === "server" ? "server/index.ts" : file === "client" ? "client/index.tsx" : file === "schema" ? "shared/schema.ts" : "interactive-specs.json";
+
+      if (file === "specs") {
+        editor.style.display = "none";
+        specsContainer.style.display = "flex";
+        renderSpecs();
+      } else {
+        editor.style.display = "block";
+        specsContainer.style.display = "none";
+        editor.value = TEMPLATES[activeTemplate][file];
+      }
 
       [...$("fileTabs").querySelectorAll(".file-tab")].forEach(b => {
         b.classList.toggle("active", b.dataset.file === file);
       });
     }
+
+    function renderSpecs() {
+      specsContainer.innerHTML = "";
+      
+      let endpoints = [];
+      if (activeTemplate === "guestbook") {
+        endpoints = [
+          { name: "getEntries", type: "query", args: [] },
+          { name: "sign", type: "mutation", args: ["name", "message"] }
+        ];
+      } else if (activeTemplate === "todo") {
+        endpoints = [
+          { name: "getTodos", type: "query", args: [] },
+          { name: "add", type: "mutation", args: ["text"] },
+          { name: "toggle", type: "mutation", args: ["id"] }
+        ];
+      } else {
+        endpoints = [
+          { name: "getRandomJoke", type: "query", args: [] }
+        ];
+      }
+
+      specsContainer.innerHTML = `
+        <h2 style="font-size:14px; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; color:var(--muted);">Interactive API Spec Client</h2>
+        <p style="font-size:12px; color:var(--dim); margin-bottom:14px;">Fill arguments and execute query/mutation endpoints mapped from <code>server/index.ts</code>.</p>
+      ` + endpoints.map((ep, idx) => `
+        <div class="spec-endpoint-card">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3>${ep.name}()</h3>
+            <span class="method">${ep.type}</span>
+          </div>
+          ${ep.args.length > 0 ? `
+            <div class="inputs" id="args-${idx}">
+              ${ep.args.map(arg => `
+                <label>${arg}: <input type="text" data-arg="${arg}" placeholder="Enter ${arg}" /></label>
+              `).join("")}
+            </div>
+          ` : `<div style="font-size:11.5px; color:var(--dim);">No arguments required.</div>`}
+          <button class="primary" onclick="testEndpoint('${ep.name}', ${idx})" style="padding:6px 12px; font-size:11.5px; align-self:flex-end;">Execute Call</button>
+        </div>
+      `).join("");
+    }
+
+    window.testEndpoint = (name, idx) => {
+      const inputsContainer = $(`args-${idx}`);
+      const payload = {};
+      if (inputsContainer) {
+        [...inputsContainer.querySelectorAll("input")].forEach(inp => {
+          payload[inp.dataset.arg] = inp.value;
+        });
+      }
+
+      log(`[API MOCK] CALL router.${name}(${JSON.stringify(payload)})`, "info");
+      
+      setTimeout(() => {
+        let response = {};
+        if (activeTemplate === "guestbook") {
+          if (name === "getEntries") response = [{ id: 1, name: "Paranjay", message: "kewl mun!", date: "12:04 PM" }];
+          else response = { success: true };
+        } else if (activeTemplate === "todo") {
+          if (name === "getTodos") response = [{ id: 1, text: "Play harmonium visualizer", done: true }];
+          else response = { success: true };
+        } else {
+          response = "Why do programmers wear glasses? Because they need to C#.";
+        }
+
+        log(`[API RESPONSE] router.${name} -> HTTP 200 OK: ${JSON.stringify(response)}`, "success");
+      }, 400);
+    };
 
     function log(msg, type = "") {
       const drawer = $("consoleDrawer");
@@ -399,12 +504,12 @@ function App() {
 
     // Compile simulator code
     function compileAndRun() {
-      // Save current code edit
-      TEMPLATES[activeTemplate][activeFile] = editor.value;
+      if (activeFile !== "specs") {
+        TEMPLATES[activeTemplate][activeFile] = editor.value;
+      }
 
       log("Initiating capsule build...", "info");
       
-      // Generate random capsule hostname
       const host = "cap-" + Math.random().toString(36).substr(2, 6);
       $("simHost").textContent = host;
 
@@ -429,9 +534,7 @@ function App() {
     // Create iframe runner representing the Preact client code
     function runSimulatorInstance(hostName) {
       const iframe = $("simViewport");
-      const clientCode = TEMPLATES[activeTemplate]["client"];
       
-      // Re-compile Preact JSX to basic HTML mock representation in the iframe
       let html = "";
       if (activeTemplate === "guestbook") {
         html = `
@@ -461,7 +564,6 @@ function App() {
                   const name = document.getElementById('nameInput').value;
                   const msg = document.getElementById('msgInput').value;
                   
-                  // Add line to mock DB
                   const list = document.getElementById('signsList');
                   const div = document.createElement('div');
                   div.style.padding = '10px';
@@ -473,7 +575,6 @@ function App() {
                   document.getElementById('msgInput').value = '';
                   document.getElementById('count').textContent = parseInt(document.getElementById('count').textContent) + 1;
                   
-                  // Post log to parent console
                   window.parent.postMessage({ type: 'log', text: 'Mutation: sign("' + name + '", "' + msg + '") -> db.execute successfully' }, '*');
                 });
               <\/script>
